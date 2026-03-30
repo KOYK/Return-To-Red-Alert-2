@@ -209,6 +209,9 @@ Intelligence
   building and the information of the unit that is being produced will be
   displayed over the building.
 
+  As long as the current production is shown, no other information like power
+  and money are displayed.
+
   * Fake=yes buildings will show the text TXT_FAKE and reveal
     their true name in tooltips (see EnemyUIName)
   * Power greater than 0 buildings will reveal the power level

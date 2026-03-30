@@ -1,0 +1,11 @@
+ Crashes; Aircraft Partitioner does not always update correctly
+
+
+Aircraft Partitioner Crash
+
+
+A part of the game that tracked aircraft across the map sometimes did not remove
+references to units. When such a stale reference then was used after the unit
+had been destroyed, the game would likely crash. Ares fixes this.
+
+ 3.0

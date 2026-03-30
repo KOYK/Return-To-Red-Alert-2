@@ -1,95 +1,49 @@
-A R E S  R E A D M E
---------------------
+Find enclosed a new version of Syringe modified to work specifically with
+Command & Conquer Red Alert 2: Yuri's Revenge v1.001.
 
-For credits and further information on how to use Ares with your mod,
-have a look at index.html in the Documentation folder.
+This version is required for Ares versions less than or equal to 3.0p1 to accept
+the March 2024 releases on EA app and Steam, if supported.
 
+# For Players
 
-USING THE STANDALONE VERSION OF ARES
-------------------------------------
+This version of Syringe might make a mod run that currently uses an Ares version
+that does not support the newly released editions on EA app and Steam.
 
-Since you are reading this readme, it is assumed you have already
-downloaded the Ares Standalone Package.
+But be aware that the mod might not be intended to run with these editions
+(yet). Before you apply this version of Syringe as a fix yourself, please check
+the respective mod's support websites and channels on whether there is an
+official solution.
 
-1. Ares works with Command & Conquer: Yuri's Revenge version 1.001 only. Update
-   your copy of the game if necessary.
+# For Modders
 
-2. Extract the Ares Standalone Package into your YR game directory.
-   Make sure Syringe.exe, Ares.dll, Ares.dll.inj and ares.mix are all directly
-   in that directory, not in a sub-folder.
+## Changes in this version
 
-3. Ensure that you have installed the following runtime files from Microsoft.
-   Please note that you will need the x86 version of the runtime files, even if
-   you have a 64 bit processor.
-   https://go.microsoft.com/fwlink/?LinkId=746571
+### Ares related
+This version will inject Ares if a supported version of an edition from EA app
+or Steam is detected. If an edition is detected that is impossible to inject
+into, a new error will be shown, directing users to check for updates of the
+game or to visit the usual support channels.
 
-4. Ensure that gamemd.exe and syringe.exe are both set to the same Compatibility
-   Mode.
+This feature applies only to the library file called Ares.dll when being
+injected into Yuri's Revenge.
 
-5. Click in the Windows Explorer's address bar while you're in the game 
-   directory. Type 
-       Syringe "gamemd.exe"
-   and press Enter. 
-   Or use the included RunAres.bat or make your own a batch file to do that for
-   you... no difference.
+### CnCNet related
+Furthermore, the widely used cncnet5.dll is handled specifically to not inject
+into Syringe itself while trying to figure out whether the library should be
+injected into the game.
 
-6. If Ares is active, it will show its version number on the startup screen as
-   well as in the lower right corner of the main menu. If this does not happen,
-   inspect syringe.log for further information.
+This feature applies to all files called cncnet5.dll, no matter which executable
+is the injection target.
 
+## Compatibility
+This version of Syringe can replace all previously released official versions of
+Syringe. It will be identifed as "0.7.3.0 yr" in the log file.
 
-CREATING A MOD WITH ARES
-------------------------
+## Stay tuned
+Since the releases are relatively new, and in merely a week the backwards
+compatibiliy has been torn down and also partially rebuilt, expect more updates
+once it is clear in what direction the releases are moving.
 
-When Ares is active, it is integrated into Yuri's Revenge and all its features
-can be used as if they were part of the original game. Creating a mod involves
-setting up Ares and distributing it to your players along with the mod files.
+More data will needed to create a future proof solution.
 
-1. Follow the steps above to extract the Ares files into the game folder and
-   launch the game via Syringe. Ares is now active.
-
-2. Write some modifications. You can now edit the INIs and make use of all the
-   new Ares features and fixes. See the documentation for more information.
-
-3. To distribute your mod, include Ares.dll, Ares.dll.inj, ares.mix,
-   Syringe.exe, license_ares.txt, and license_syringe.txt along with your
-   modified game files.
-
-4. Make sure that players also launch the game as described in step 5 above. For
-   that you can include RunAres.bat also or use a custom launcher or client.
-
-5. Note that all players have to have the same versions of the Ares files.
-   Incompatible versions cause Reconnection Errors in multiplayer games.
-
---------------------------------------------------------------------------------
-
-Please mind the licenses of all involved files, read the manual before asking
-questions, and file bugs you find in the Bugtracker (not the forums) so they can
-be fixed.
-
-We will happily answer questions about Ares at the forums or in chat, but
-THERE IS NO OFFICIAL NPATCH > ARES MIGRATION SUPPORT.
-The reasons for this have been discussed at length and will not be reiterated
-in this readme. If you wish to migrate from NPatch, feel free to coordinate
-your efforts with other NPatch users.
-
-
-Most importantly, enjoy Ares! :)
-The Ares Development Team
-
-
-URLS
-----
-Ares: http://ares.strategy-x.com/
-Project: https://launchpad.net/ares
-Bugtracker: https://bugs.launchpad.net/ares
-Source code: https://github.com/Ares-Developers/Ares
-ModEnc: http://www.modenc.renegadeprojects.com/Ares
-Chat: http://tinyurl.com/l4k9eaz (Browser) or
-      irc://chat.freenode.net/RenProj (IRC Client)
-
---------------------------------------------------------------------------------
-For information about copyrights and other legal information, read the
-respective license files.
-
-EOF
+AlexB, Pi day of 2024

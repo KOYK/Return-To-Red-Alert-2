@@ -1,0 +1,21 @@
+ Occupiers; All player-controlled occupiers can enter the same building
+
+
+Player-controlled infantry considered as same owner in campaigns
+
+
+In campaign missions, player-controlled infantry are considered of the same
+house when deciding whether they can enter an occupiable structure. This way,
+infantry act as being of the same owner, despite being of different houses for
+technical reasons.
+
+The house of the unit entering the building first (and thus capturing it from
+the neutral house) decides the new owner house of the structure. This owner is
+kept until the occupants are ejected again.
+
+Breaking alliances is not supported. You have to ensure that alliances involving
+player-controlled houses when there are occupiers are persistent.
+
+.. note: This setting will be made optional in a future release.
+
+ 3.0
