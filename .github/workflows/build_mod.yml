@@ -17,17 +17,27 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Download ccmixar Tool
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.21'
+
+      - name: Clone ccmixar Repository
         run: |
-          # Download the latest Windows binary from ccmixar releases
-          Invoke-WebRequest -Uri "https://github.com/askeladdk/ccmixar/releases/latest/download/ccmixar-windows-amd64.exe" -OutFile "scripts/ccmixar.exe"
-          if (-not (Test-Path "scripts/ccmixar.exe")) { throw "Failed to download ccmixar.exe" }
-          Write-Host "✓ ccmixar.exe downloaded"
+          git clone https://github.com/askeladdk/ccmixar.git ccmixar_source
+          Write-Host "✓ ccmixar source cloned"
+        shell: pwsh
+
+      - name: Build ccmixar
+        run: |
+          cd ccmixar_source
+          go build -o ../scripts/ccmixar.exe .
+          if (-not (Test-Path "../scripts/ccmixar.exe")) { throw "Build failed" }
+          Write-Host "✓ ccmixar.exe built successfully"
         shell: pwsh
 
       - name: Pack MIX File using ccmixar
         run: |
-          # ccmixar syntax: ccmixar pack <source-folder> <output-file>
           .\scripts\ccmixar.exe pack Source\expandmd24 expandmd24.mix
           
           if (-not (Test-Path "expandmd24.mix")) { throw "MIX creation failed" }
