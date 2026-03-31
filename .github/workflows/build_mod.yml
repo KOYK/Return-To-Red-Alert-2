@@ -82,22 +82,28 @@ jobs:
           tag="${{ steps.version.outputs.TAG }}"
           changelog="${{ steps.changelog.outputs.CHANGELOG }}"
           
-          # Use a Here-Document to write the file safely
-          # The 'EOF' is quoted so variables are NOT expanded by bash immediately, 
-          # but we use $() for commands and $var for our variables which ARE expanded.
-          # Actually, for GitHub vars, we need unquoted EOF to expand ${{ }}
-          
-          cat > "$readme_path" << EOF
+          # 1. Create the file with PLACEHOLDERS (No $ signs in the text block!)
+          cat > "$readme_path" << 'ENDOFHEADER'
 ========================================
-YR_TO_RA2 Mod - Version $tag
-Released: $date_str
+YR_TO_RA2 Mod - Version @@TAG@@
+Released: @@DATE@@
 ========================================
 
-$changelog
+@@CHANGELOG@@
 
 ----------------------------------------
-$existing_content
-EOF
+ENDOFHEADER
+
+          # 2. Append existing content
+          if [ -n "$existing_content" ]; then
+            echo "$$existing_content" >> "$$readme_path"
+          fi
+
+          # 3. Replace placeholders with real values using sed
+          # Note: We escape special chars in changelog if needed, but simple replacement usually works
+          sed -i "s/@@TAG@@/$$tag/g" "$$readme_path"
+          sed -i "s/@@DATE@@/$$date_str/g" "$$readme_path"
+          sed -i "s/@@CHANGELOG@@/$$changelog/g" "$$readme_path"
           
           echo "✓ README updated"
 
