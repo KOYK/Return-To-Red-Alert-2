@@ -40,13 +40,10 @@ jobs:
           Move-Item "dist\RA2_Mod_Installer.exe" "." -Force
         shell: pwsh
 
-      - name: Create 7zip Archive
+      - name: Create ZIP Archive
         run: |
-          7z a -t7z -m0=lzma2 -mx=9 RA2_Mod_Package.7z `
-            expandmd24.mix `
-            RA2_Mod_Installer.exe `
-            Source\*.bat `
-            README.md
+          Compress-Archive -Path expandmd24.mix,RA2_Mod_Installer.exe,Source\*.bat,README.md -DestinationPath RA2_Mod_Package.zip -Force
+          Write-Host "✓ ZIP archive created successfully"
         shell: pwsh
 
       - name: Upload Artifacts
@@ -56,4 +53,4 @@ jobs:
           path: |
             expandmd24.mix
             RA2_Mod_Installer.exe
-            RA2_Mod_Package.7z
+            RA2_Mod_Package.zip
