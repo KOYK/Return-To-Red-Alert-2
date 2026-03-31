@@ -1,10 +1,9 @@
-name: Build RA2 Mod ZIP
+name: Build YR_TO_RA2 Release
 
 on:
   push:
     tags:
       - 'v*'
-  workflow_dispatch:
 
 permissions:
   contents: write
@@ -16,6 +15,69 @@ jobs:
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Fetch all history for changelog
+
+      - name: Extract Version
+        id: version
+        run: |
+          $tag = $env:GITHUB_REF_NAME
+          $version = $tag -replace '^v', ''
+          echo "VERSION=$version" >> $env:GITHUB_OUTPUT
+          echo "TAG=$tag" >> $env:GITHUB_OUTPUT
+          Write-Host "Version: $version"
+        shell: pwsh
+
+      - name: Generate Changelog
+        id: changelog
+        run: |
+          # Get commits since last tag
+          $$prevTag = git describe --tags --abbrev=0 HEAD^ 2>$$null
+          if ($LASTEXITCODE -ne 0) { $prevTag = "" }
+          
+          if ($prevTag) {
+            $commits = git log --pretty=format:"* %s" $prevTag..HEAD
+          } else {
+            $commits = git log --pretty=format:"* %s" HEAD
+          }
+          
+          $changelog = @"
+## Changelog for ${{ steps.version.outputs.TAG }}
+$commits
+"@
+          
+          echo "CHANGELOG<<EOF" >> $env:GITHUB_OUTPUT
+          echo "$changelog" >> $env:GITHUB_OUTPUT
+          echo "EOF" >> $env:GITHUB_OUTPUT
+        shell: pwsh
+
+      - name: Update README
+        run: |
+          $readmePath = "YR_TO_RA2_readme.txt"
+          $existingContent = ""
+          
+          # Read existing README if it exists
+          if (Test-Path $readmePath) {
+            $existingContent = Get-Content $readmePath -Raw
+          }
+          
+          # Create new README with version info at top
+          $newContent = @"
+========================================
+YR_TO_RA2 Mod - Version ${{ steps.version.outputs.TAG }}
+Released: $(Get-Date -Format "yyyy-MM-dd")
+========================================
+
+${{ steps.changelog.outputs.CHANGELOG }}
+
+----------------------------------------
+Previous Versions:
+$existingContent
+"@
+          
+          Set-Content -Path $readmePath -Value $newContent -Encoding UTF8
+          Write-Host "✓ README updated with version ${{ steps.version.outputs.TAG }}"
+        shell: pwsh
 
       - name: Set up Go
         uses: actions/setup-go@v5
@@ -38,47 +100,132 @@ jobs:
 
       - name: Pack MIX File using ccmixar
         run: |
-          # Correct syntax: ccmixar pack -dir <input> -mix <output> -game <game_type>
           .\scripts\ccmixar.exe pack -dir Source\expandmd24 -mix expandmd24.mix -game ra2
           
           if (-not (Test-Path "expandmd24.mix")) { 
             throw "MIX creation failed" 
           }
-          Write-Host "✓ MIX file created successfully with ccmixar"
+          Write-Host "✓ MIX file created successfully"
         shell: pwsh
 
-      - name: Create ZIP Archive
+      - name: Create Version Marker
+        run: |
+          Set-Content -Path "YR_TO_RA2_VERSION.txt" -Value "${{ steps.version.outputs.TAG }}" -Encoding UTF8
+          Write-Host "✓ Version marker created"
+        shell: pwsh
+
+      - name: Create Portable ZIP
         run: |
           $tempFolder = "dist_temp"
           if (Test-Path $tempFolder) { Remove-Item -Recurse -Force $tempFolder }
           New-Item -ItemType Directory -Force -Path $tempFolder | Out-Null
 
           Copy-Item "expandmd24.mix" -Destination $tempFolder
+          Copy-Item "YR_TO_RA2_readme.txt" -Destination $tempFolder
+          Copy-Item "YR_TO_RA2_VERSION.txt" -Destination $tempFolder
 
           Get-ChildItem -Path "Source" -Exclude "expandmd24" | ForEach-Object {
             Copy-Item $_.FullName -Destination $tempFolder -Recurse -Force
           }
 
-          Compress-Archive -Path "$tempFolder\*" -DestinationPath "YR_TO_RA2.zip" -CompressionLevel Optimal -Force
+          Compress-Archive -Path "$$tempFolder\*" -DestinationPath "YR_TO_RA2_$${{ steps.version.outputs.VERSION }}.zip" -CompressionLevel Optimal -Force
           
-          Write-Host "✓ ZIP archive created"
+          Write-Host "✓ Portable ZIP created"
           Remove-Item -Recurse -Force $tempFolder
+        shell: pwsh
 
-      - name: Create Release and Upload Asset
+      - name: Create Installer Script
+        run: |
+          $issContent = @"
+[Setup]
+AppName=YR_TO_RA2 Mod
+AppVersion=${{ steps.version.outputs.VERSION }}
+AppPublisher=KOYK
+DefaultDirName={autopf}\Westwood\Red Alert 2
+DefaultGroupName=YR_TO_RA2 Mod
+OutputDir=dist
+OutputBaseFilename=YR_TO_RA2_${{ steps.version.outputs.VERSION }}_Installer
+Compression=lzma2
+SolidCompression=yes
+WizardStyle=modern
+
+[Files]
+Source: "expandmd24.mix"; DestDir: "{app}"; Flags: ignoreversion
+Source: "YR_TO_RA2_readme.txt"; DestDir: "{app}"; Flags: ignoreversion
+Source: "YR_TO_RA2_VERSION.txt"; DestDir: "{app}"; Flags: ignoreversion
+Source: "Source\*.bat"; DestDir: "{app}"; Flags: ignoreversion
+Source: "Source\*.ini"; DestDir: "{app}"; Flags: ignoreversion
+Source: "Source\*.cfg"; DestDir: "{app}"; Flags: ignoreversion
+
+[Code]
+procedure CurStepChanged(CurStep: TSetupStep);
+var
+  OldVersion: String;
+  MixExists: Boolean;
+begin
+  if CurStep = ssPostInstall then
+  begin
+    // Check if expandmd24.mix exists (old installation)
+    MixExists := FileExists(ExpandConstant('{app}\expandmd24.mix'));
+    if MixExists then
+    begin
+      // Delete old mix file
+      DelFile(ExpandConstant('{app}\expandmd24.mix'));
+      MsgBox('Old expandmd24.mix file removed.', mbInformation, MB_OK);
+    end;
+    
+    // Check version marker
+    if FileExists(ExpandConstant('{app}\YR_TO_RA2_VERSION.txt')) then
+    begin
+      LoadStringFromFile(ExpandConstant('{app}\YR_TO_RA2_VERSION.txt'), OldVersion);
+      MsgBox('Previous version: ' + OldVersion, mbInformation, MB_OK);
+    end;
+  end;
+end;
+
+[Icons]
+Name: "{group}\Run Mod"; Filename: "{app}\RunAres.bat"
+Name: "{group}\{cm:UninstallProgram,YR_TO_RA2 Mod}"; Filename: "{uninstallexe}"
+"@
+          
+          Set-Content -Path "installer.iss" -Value $issContent -Encoding UTF8
+          Write-Host "✓ Installer script created"
+        shell: pwsh
+
+      - name: Install Inno Setup
+        run: choco install innosetup -y
+        shell: pwsh
+
+      - name: Build Installer
+        run: |
+          iscc.exe installer.iss
+          if (-not (Test-Path "dist\YR_TO_RA2_${{ steps.version.outputs.VERSION }}_Installer.exe")) { 
+            throw "Installer build failed" 
+          }
+          Move-Item "dist\YR_TO_RA2_${{ steps.version.outputs.VERSION }}_Installer.exe" "." -Force
+          Write-Host "✓ Installer created successfully"
+        shell: pwsh
+
+      - name: Create Release and Upload Assets
         uses: softprops/action-gh-release@v2
         with:
-          files: YR_TO_RA2.zip
+          files: |
+            YR_TO_RA2_${{ steps.version.outputs.VERSION }}.zip
+            YR_TO_RA2_${{ steps.version.outputs.VERSION }}_Installer.exe
           tag_name: ${{ github.ref_name }}
-          name: Release ${{ github.ref_name }}
+          name: YR_TO_RA2 ${{ steps.version.outputs.TAG }}
           body: |
-            ## YR TO RA2
+            ## YR_TO_RA2 Mod - ${{ steps.version.outputs.TAG }}
             
-            **Contents:**
-            - `expandmd24.mix`: The packed mod archive (created with ccmixar).
-            - `YR_TO_RA2.zip`: Full package.
+            ${ { steps.changelog.outputs.CHANGELOG }}
+            
+            **Downloads:**
+            - [Portable ZIP](#) - For manual installation
+            - [Installer EXE](#) - For automatic installation (removes old version)
             
             **Installation:**
-            1. Extract the ZIP.
-            2. Place `expandmd24.mix` in your Red Alert 2/Yuri's Revenge folder.
+            1. Run the installer OR extract the ZIP
+            2. Place files in your Red Alert 2/Yuri's Revenge folder
+            3. Run `RunAres.bat` to launch
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
