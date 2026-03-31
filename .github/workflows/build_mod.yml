@@ -1,22 +1,13 @@
-name: Build RA2 Mod ZIP
+name: Build and Release RA2 Mod
 
 on:
   push:
-    paths:
-      - 'Source/expandmd24/**'
-      - 'Source/*.bat'
-      - 'scripts/pack_mix.py'
-      - '.github/workflows/build_mod.yml'
-  workflow_dispatch:
-  # This triggers the release logic when you create a tag (e.g., v1.0)
-  release:
-    types: [published]
+    tags:
+      - 'v*'  # Triggers on any tag starting with 'v' (e.g., v1.0, v1.1)
 
 jobs:
-  build:
+  build-and-release:
     runs-on: windows-latest
-    # Only run build if it's a release or manual trigger, or push to specific paths
-    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.event_name == 'release'
 
     steps:
       - name: Checkout Code
@@ -34,7 +25,7 @@ jobs:
           Write-Host "✓ MIX file created"
         shell: pwsh
 
-      - name: Create ZIP Archive (Max Compression)
+      - name: Create ZIP Archive
         run: |
           $tempFolder = "dist_temp"
           if (Test-Path $tempFolder) { Remove-Item -Recurse -Force $tempFolder }
@@ -50,29 +41,21 @@ jobs:
           Write-Host "✓ ZIP archive created"
           Remove-Item -Recurse -Force $tempFolder
 
-      - name: Upload Artifact (For Actions Tab)
-        uses: actions/upload-artifact@v4
-        with:
-          name: RA2-Mod-Package
-          path: RA2_Mod_Package.zip
-          retention-days: 30
-
-  # NEW JOB: Attach to Release
-  upload-release:
-    needs: build
-    runs-on: ubuntu-latest
-    # Only run if the event is a published release
-    if: github.event_name == 'release'
-    
-    steps:
-      - name: Download Artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: RA2-Mod-Package
-
-      - name: Upload Release Asset
+      - name: Create Release and Upload Asset
         uses: softprops/action-gh-release@v2
         with:
           files: RA2_Mod_Package.zip
+          tag_name: ${{ github.ref_name }}
+          name: Release ${{ github.ref_name }}
+          body: |
+            ## RA2 Mod Package
+            
+            This release contains:
+            - `expandmd24.mix`: The packed mod file.
+            - `RA2_Mod_Package.zip`: The full package with all files.
+            
+            **Installation:**
+            1. Extract the ZIP.
+            2. Run the installer or place the .mix file in your game directory.
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
