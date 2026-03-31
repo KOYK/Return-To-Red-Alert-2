@@ -50,19 +50,25 @@ jobs:
         id: changelog
         shell: bash
         run: |
-          prev_tag=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
+          # Get previous tag safely
+          prev_tag=`git describe --tags --abbrev=0 HEAD^ 2>/dev/null` || prev_tag=""
           
+          # Get commits
           if [ -n "$prev_tag" ]; then
-            commits=$$(git log --pretty=format:"* %s" "$$prev_tag"..HEAD)
+            commits=`git log --pretty=format:"* %s" "$prev_tag"..HEAD`
           else
-            commits=$(git log --pretty=format:"* %s" HEAD)
+            commits=`git log --pretty=format:"* %s" HEAD`
           fi
           
+          # Construct changelog
           changelog_header="## Changelog for ${{ github.ref_name }}"
           changelog_full="$$changelog_header"$$'\n'"$commits"
           
+          # Write to temp file
           echo "$changelog_full" > changelog_temp.txt
-          content=$(cat changelog_temp.txt)
+          
+          # Read back and set output
+          content=`cat changelog_temp.txt`
           
           echo "CHANGELOG<<EOF" >> $GITHUB_OUTPUT
           echo "$content" >> $GITHUB_OUTPUT
