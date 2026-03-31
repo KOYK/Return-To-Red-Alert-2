@@ -17,16 +17,21 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.x'
-
-      - name: Pack MIX File (Self-Contained)
+      - name: Download ccmixar Tool
         run: |
-          python scripts/pack_mix.py Source/expandmd24 expandmd24.mix
+          # Download the latest Windows binary from ccmixar releases
+          Invoke-WebRequest -Uri "https://github.com/askeladdk/ccmixar/releases/latest/download/ccmixar-windows-amd64.exe" -OutFile "scripts/ccmixar.exe"
+          if (-not (Test-Path "scripts/ccmixar.exe")) { throw "Failed to download ccmixar.exe" }
+          Write-Host "✓ ccmixar.exe downloaded"
+        shell: pwsh
+
+      - name: Pack MIX File using ccmixar
+        run: |
+          # ccmixar syntax: ccmixar pack <source-folder> <output-file>
+          .\scripts\ccmixar.exe pack Source\expandmd24 expandmd24.mix
+          
           if (-not (Test-Path "expandmd24.mix")) { throw "MIX creation failed" }
-          Write-Host "✓ MIX file created successfully"
+          Write-Host "✓ MIX file created successfully with ccmixar"
         shell: pwsh
 
       - name: Create ZIP Archive
@@ -56,7 +61,7 @@ jobs:
             ## RA2 Mod Package
             
             **Contents:**
-            - `expandmd24.mix`: The packed mod archive.
+            - `expandmd24.mix`: The packed mod archive (created with ccmixar).
             - `RA2_Mod_Package.zip`: Full package.
             
             **Installation:**
