@@ -1,0 +1,59 @@
+name: Build RA2 Mod Package
+
+on:
+  push:
+    paths:
+      - 'Source/expandmd24/**'
+      - 'Source/*.bat'
+      - 'installer.iss'
+      - 'scripts/pack_mix.py'
+      - '.github/workflows/build_mod.yml'
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Install Tools (7-Zip & Inno Setup)
+        run: choco install 7zip innosetup -y
+        shell: pwsh
+
+      - name: Pack MIX File
+        run: |
+          python scripts/pack_mix.py Source/expandmd24 expandmd24.mix
+          if (-not (Test-Path "expandmd24.mix")) { throw "MIX creation failed" }
+        shell: pwsh
+
+      - name: Build Installer
+        run: |
+          iscc.exe installer.iss /O.
+          if (-not (Test-Path "dist\RA2_Mod_Installer.exe")) { throw "Installer build failed" }
+          Move-Item "dist\RA2_Mod_Installer.exe" "." -Force
+        shell: pwsh
+
+      - name: Create 7zip Archive
+        run: |
+          7z a -t7z -m0=lzma2 -mx=9 RA2_Mod_Package.7z `
+            expandmd24.mix `
+            RA2_Mod_Installer.exe `
+            Source\*.bat `
+            README.md
+        shell: pwsh
+
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: RA2-Mod-Distribution
+          path: |
+            expandmd24.mix
+            RA2_Mod_Installer.exe
+            RA2_Mod_Package.7z
