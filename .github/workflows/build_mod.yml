@@ -27,11 +27,20 @@ jobs:
       - name: Extract Version
         id: version
         run: |
+          $tag = ""
           if ($env:GITHUB_EVENT_NAME -eq 'workflow_dispatch') {
-            $tag = ${{ github.event.inputs.version }}
+            # Get input safely
+            $$inputVersion = "$${{ github.event.inputs.version }}"
+            if ($inputVersion -and $inputVersion -ne "") {
+              $tag = $inputVersion
+            } else {
+              $tag = "v1.0" # Fallback
+            }
           } else {
+            # It's a tag push
             $tag = $env:GITHUB_REF_NAME
           }
+          
           $version = $tag -replace '^v', ''
           echo "VERSION=$version" >> $env:GITHUB_OUTPUT
           echo "TAG=$tag" >> $env:GITHUB_OUTPUT
