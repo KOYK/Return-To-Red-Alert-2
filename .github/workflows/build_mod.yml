@@ -17,22 +17,20 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Download mix1 CLI Tool
-        run: |
-          # Download the latest release binary for Windows
-          Invoke-WebRequest -Uri "https://github.com/cyberarm/mix1/releases/latest/download/mix1.exe" -OutFile "scripts/mix1.exe"
-          if (-not (Test-Path "scripts/mix1.exe")) { throw "Failed to download mix1.exe" }
-          Write-Host "✓ mix1.exe downloaded"
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Install cnc-mix Library
+        run: pip install cnc-mix
         shell: pwsh
 
-      - name: Pack MIX File using mix1
+      - name: Pack MIX File
         run: |
-          # Syntax: mix1 pack <output_file> <input_folder>
-          # Note: mix1 usually expects the folder to be passed as an argument
-          .\scripts\mix1.exe pack expandmd24.mix Source\expandmd24
-          
+          python scripts/pack_mix.py Source/expandmd24 expandmd24.mix
           if (-not (Test-Path "expandmd24.mix")) { throw "MIX creation failed" }
-          Write-Host "✓ MIX file created successfully with mix1"
+          Write-Host "✓ MIX file created successfully"
         shell: pwsh
 
       - name: Create ZIP Archive
@@ -41,15 +39,12 @@ jobs:
           if (Test-Path $tempFolder) { Remove-Item -Recurse -Force $tempFolder }
           New-Item -ItemType Directory -Force -Path $tempFolder | Out-Null
 
-          # 1. Copy the packed MIX file
           Copy-Item "expandmd24.mix" -Destination $tempFolder
 
-          # 2. Copy ALL files from Source/ EXCEPT the expandmd24 folder
           Get-ChildItem -Path "Source" -Exclude "expandmd24" | ForEach-Object {
             Copy-Item $_.FullName -Destination $tempFolder -Recurse -Force
           }
 
-          # 3. Create ZIP
           Compress-Archive -Path "$tempFolder\*" -DestinationPath "RA2_Mod_Package.zip" -CompressionLevel Optimal -Force
           
           Write-Host "✓ ZIP archive created"
@@ -65,7 +60,7 @@ jobs:
             ## RA2 Mod Package
             
             **Contents:**
-            - `expandmd24.mix`: The packed mod archive (created with mix1).
+            - `expandmd24.mix`: The packed mod archive.
             - `RA2_Mod_Package.zip`: Full package.
             
             **Installation:**

@@ -1,35 +1,33 @@
 #!/usr/bin/env python3
 """
-RA2/YR Compatible MIX Packer
-Handles path normalization and header structure correctly.
+Pack files into a Westwood MIX archive using the cnc-mix library.
 """
-
 import os
-import struct
 import sys
+
+try:
+    from cnc_mix import MixFile
+except ImportError:
+    print("Error: cnc-mix library not found. Installing...")
+    import subprocess
+    subprocess.check_call([sys.executable, "-m", "pip", "install", "cnc-mix"])
+    from cnc_mix import MixFile
 
 def pack_mix(source_folder, output_file):
     print(f"[*] Packing {source_folder} -> {output_file}")
     
+    if not os.path.exists(source_folder):
+        print(f"[!] Error: Source folder '{source_folder}' not found!")
+        return False
+
     files = []
-    # Walk the directory
     for root, _, filenames in os.walk(source_folder):
         for filename in filenames:
             full_path = os.path.join(root, filename)
             rel_path = os.path.relpath(full_path, source_folder)
-            
-            # CRITICAL: RA2 expects forward slashes in paths, not backslashes
+            # Normalize to forward slashes
             rel_path = rel_path.replace('\\', '/')
-            
-            # CRITICAL: Paths in MIX files usually do NOT include the root folder name
-            # If your folder is 'expandmd24', the files inside should be 'file.ini', not 'expandmd24/file.ini'
-            # But since we are walking 'Source/expandmd24', rel_path is already relative to that folder.
-            
-            files.append({
-                'name': rel_path,
-                'path': full_path,
-                'size': os.path.getsize(full_path)
-            })
+            files.append((rel_path, full_path))
 
     if not files:
         print("[!] Error: No files found!")
@@ -37,43 +35,19 @@ def pack_mix(source_folder, output_file):
 
     print(f"[+] Found {len(files)} files to pack")
 
-    # Header Constants
-    MAGIC = b'MIX\x00'
+    # Create MixFile object
+    mix = MixFile()
     
-    # Calculate sizes
-    entry_size = 8 # 4 bytes offset + 4 bytes size
-    header_size = 8 + (len(files) * entry_size)
-    
-    # Build data buffer
-    file_data = b""
-    offsets = []
-    
-    for f in files:
-        with open(f['path'], 'rb') as src:
-            data = src.read()
-        
-        offset = len(file_data) + header_size
-        size = len(data)
-        offsets.append((offset, size))
-        file_data += data
+    # Add files
+    for rel_path, full_path in files:
+        with open(full_path, 'rb') as f:
+            data = f.read()
+        mix.add_file(rel_path, data)
 
-    # Write the file
-    with open(output_file, 'wb') as f:
-        # 1. Magic
-        f.write(MAGIC)
-        
-        # 2. File Count (Little Endian)
-        f.write(struct.pack('<I', len(files)))
-        
-        # 3. File Entries (Offset, Size) - Little Endian
-        for offset, size in offsets:
-            f.write(struct.pack('<II', offset, size))
-        
-        # 4. File Data
-        f.write(file_data)
-
-    total_size = os.path.getsize(output_file)
-    print(f"[+] Success! Created {output_file} ({total_size:,} bytes)")
+    # Save
+    mix.save(output_file)
+    
+    print(f"[+] Success! Created {output_file}")
     return True
 
 if __name__ == '__main__':
