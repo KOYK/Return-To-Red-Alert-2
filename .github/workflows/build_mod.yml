@@ -33,18 +33,25 @@ jobs:
         run: |
           # Create a temporary folder to gather files
           $tempFolder = "dist_temp"
+          
+          # Clean up any existing temp folder first
+          if (Test-Path $tempFolder) {
+            Remove-Item -Recurse -Force $tempFolder
+          }
+          
+          # Create fresh temp folder
           New-Item -ItemType Directory -Force -Path $tempFolder | Out-Null
 
           # 1. Copy the packed MIX file
           Copy-Item "expandmd24.mix" -Destination $tempFolder
 
           # 2. Copy ALL files from Source/ EXCEPT the expandmd24 folder
-          Get-ChildItem -Path "Source" -Exclude "expandmd24" -Recurse | 
-            Copy-Item -Destination $tempFolder -Recurse
+          # Get all items (files and folders) except expandmd24
+          Get-ChildItem -Path "Source" -Exclude "expandmd24" | ForEach-Object {
+            Copy-Item $_.FullName -Destination $tempFolder -Recurse -Force
+          }
 
-          # 3. Create ZIP with Maximum Compression (Optimal)
-          # PowerShell's Compress-Archive uses Deflate, which is standard
-          # We can't easily force "Ultra" compression like 7z, but Deflate is fast and standard
+          # 3. Create ZIP with Maximum Compression
           Compress-Archive -Path "$tempFolder\*" -DestinationPath "RA2_Mod_Package.zip" -CompressionLevel Optimal -Force
 
           Write-Host "✓ ZIP archive created with max compression"
