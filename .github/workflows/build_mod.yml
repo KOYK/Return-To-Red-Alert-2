@@ -27,24 +27,22 @@ jobs:
       - name: Extract Version
         id: version
         run: |
-          $tag = ""
-          if ($env:GITHUB_EVENT_NAME -eq 'workflow_dispatch') {
-            # Get input safely
-            $$inputVersion = "$${{ github.event.inputs.version }}"
-            if ($inputVersion -and $inputVersion -ne "") {
-              $tag = $inputVersion
-            } else {
-              $tag = "v1.0" # Fallback
-            }
+          # Determine the tag name
+          if ("${{ github.event_name }}" -eq "workflow_dispatch") {
+            $$tag = "$${{ github.event.inputs.version }}"
           } else {
-            # It's a tag push
-            $tag = $env:GITHUB_REF_NAME
+            $$tag = "$${{ github.ref_name }}"
           }
           
+          # Remove 'v' prefix if present
           $version = $tag -replace '^v', ''
+          
+          # Output to environment
           echo "VERSION=$version" >> $env:GITHUB_OUTPUT
           echo "TAG=$tag" >> $env:GITHUB_OUTPUT
-          Write-Host "Version: $version (Tag: $tag)"
+          
+          Write-Host "Detected Tag: $tag"
+          Write-Host "Detected Version: $version"
         shell: pwsh
 
       - name: Generate Changelog
