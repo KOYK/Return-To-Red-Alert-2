@@ -24,27 +24,35 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Set Version File
-        run: |
-          # Determine version based on event
-          if ("${{ github.event_name }}" -eq "workflow_dispatch") {
-            $$ver = "$${{ github.event.inputs.version }}"
-          } else {
-            $$ver = "$${{ github.ref_name }}"
-          }
-          # Write to file
-          Set-Content -Path "version.txt" -Value $ver
-          Write-Host "Version set to: $ver"
-        shell: pwsh
-
-      - name: Read Version
+      - name: Extract Version
         id: version
+        env:
+          # Pass the inputs as Environment Variables BEFORE the script runs
+          MANUAL_INPUT: ${{ github.event.inputs.version }}
+          TAG_NAME: ${{ github.ref_name }}
+          EVENT_TYPE: ${{ github.event_name }}
         run: |
-          $tag = Get-Content "version.txt"
+          $tag = ""
+          
+          # Check the event type using the Environment Variable
+          if ($env:EVENT_TYPE -eq "workflow_dispatch") {
+            if ($env:MANUAL_INPUT -and $env:MANUAL_INPUT -ne "") {
+              $tag = $env:MANUAL_INPUT
+            } else {
+              $tag = "v1.0"
+            }
+          } else {
+            $tag = $env:TAG_NAME
+          }
+          
           $version = $tag -replace '^v', ''
+          
           echo "VERSION=$version" >> $env:GITHUB_OUTPUT
           echo "TAG=$tag" >> $env:GITHUB_OUTPUT
-          Write-Host "Read Tag: $tag"
+          
+          Write-Host "Detected Event: $env:EVENT_TYPE"
+          Write-Host "Detected Tag: $tag"
+          Write-Host "Detected Version: $version"
         shell: pwsh
 
       - name: Generate Changelog
