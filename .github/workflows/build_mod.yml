@@ -1,9 +1,13 @@
-name: Build and Release RA2 Mod
+name: Build RA2 Mod ZIP
 
 on:
   push:
     tags:
-      - 'v*'  # Triggers on any tag starting with 'v' (e.g., v1.0, v1.1)
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
 
 jobs:
   build-and-release:
@@ -18,11 +22,11 @@ jobs:
         with:
           python-version: '3.x'
 
-      - name: Pack MIX File
+      - name: Pack MIX File (RA2 Compatible)
         run: |
           python scripts/pack_mix.py Source/expandmd24 expandmd24.mix
           if (-not (Test-Path "expandmd24.mix")) { throw "MIX creation failed" }
-          Write-Host "✓ MIX file created"
+          Write-Host "✓ MIX file created successfully"
         shell: pwsh
 
       - name: Create ZIP Archive
@@ -31,13 +35,17 @@ jobs:
           if (Test-Path $tempFolder) { Remove-Item -Recurse -Force $tempFolder }
           New-Item -ItemType Directory -Force -Path $tempFolder | Out-Null
 
+          # 1. Copy the packed MIX file
           Copy-Item "expandmd24.mix" -Destination $tempFolder
 
+          # 2. Copy ALL files from Source/ EXCEPT the expandmd24 folder
           Get-ChildItem -Path "Source" -Exclude "expandmd24" | ForEach-Object {
             Copy-Item $_.FullName -Destination $tempFolder -Recurse -Force
           }
 
+          # 3. Create ZIP with Maximum Compression
           Compress-Archive -Path "$tempFolder\*" -DestinationPath "RA2_Mod_Package.zip" -CompressionLevel Optimal -Force
+          
           Write-Host "✓ ZIP archive created"
           Remove-Item -Recurse -Force $tempFolder
 
@@ -50,12 +58,13 @@ jobs:
           body: |
             ## RA2 Mod Package
             
-            This release contains:
-            - `expandmd24.mix`: The packed mod file.
-            - `RA2_Mod_Package.zip`: The full package with all files.
+            **Contents:**
+            - `expandmd24.mix`: The packed mod archive.
+            - `RA2_Mod_Package.zip`: Full package (MIX + other files).
             
             **Installation:**
             1. Extract the ZIP.
-            2. Run the installer or place the .mix file in your game directory.
+            2. Place `expandmd24.mix` in your Red Alert 2/Yuri's Revenge folder.
+            3. Run `RunAres.bat` or launch the game.
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-Corrected MIX file packer for Red Alert 2 / Yuri's Revenge
-Matches the Westwood MIX format exactly.
+RA2/YR Compatible MIX Packer
+Handles path normalization and header structure correctly.
 """
 
 import os
@@ -11,14 +11,20 @@ import sys
 def pack_mix(source_folder, output_file):
     print(f"[*] Packing {source_folder} -> {output_file}")
     
-    # Collect all files
     files = []
+    # Walk the directory
     for root, _, filenames in os.walk(source_folder):
-        for filename in sorted(filenames):
+        for filename in filenames:
             full_path = os.path.join(root, filename)
             rel_path = os.path.relpath(full_path, source_folder)
-            # Normalize path separators to forward slashes (Westwood standard)
+            
+            # CRITICAL: RA2 expects forward slashes in paths, not backslashes
             rel_path = rel_path.replace('\\', '/')
+            
+            # CRITICAL: Paths in MIX files usually do NOT include the root folder name
+            # If your folder is 'expandmd24', the files inside should be 'file.ini', not 'expandmd24/file.ini'
+            # But since we are walking 'Source/expandmd24', rel_path is already relative to that folder.
+            
             files.append({
                 'name': rel_path,
                 'path': full_path,
@@ -31,15 +37,14 @@ def pack_mix(source_folder, output_file):
 
     print(f"[+] Found {len(files)} files to pack")
 
-    # MIX Header Constants
+    # Header Constants
     MAGIC = b'MIX\x00'
-    VERSION = 1  # Standard version for RA2/YR
     
-    # Calculate header size: Magic(4) + Count(4) + (Entries * 8)
-    entry_size = 8
+    # Calculate sizes
+    entry_size = 8 # 4 bytes offset + 4 bytes size
     header_size = 8 + (len(files) * entry_size)
     
-    # Build file data and calculate offsets
+    # Build data buffer
     file_data = b""
     offsets = []
     
@@ -52,7 +57,7 @@ def pack_mix(source_folder, output_file):
         offsets.append((offset, size))
         file_data += data
 
-    # Write MIX file
+    # Write the file
     with open(output_file, 'wb') as f:
         # 1. Magic
         f.write(MAGIC)
