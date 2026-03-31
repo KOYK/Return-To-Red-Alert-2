@@ -82,27 +82,20 @@ jobs:
           tag="${{ steps.version.outputs.TAG }}"
           changelog="${{ steps.changelog.outputs.CHANGELOG }}"
           
-          # Create file with ESCAPED equals signs (\=) to satisfy YAML parser
-          cat > "$readme_path" << 'ENDOFHEADER'
-#========================================
-YR_TO_RA2 Mod - Version @@TAG@@
-Released: @@DATE@@
-#========================================
-
-@@CHANGELOG@@
-
-#----------------------------------------
-ENDOFHEADER
-
-          # Append existing content
+          # 1. Create/Overwrite the file with the NEW header (Line by Line)
+          echo "****************************************" > "$readme_path"
+          echo "YR_TO_RA2 Mod - Version $$tag" >> "$$readme_path"
+          echo "Released: $$date_str" >> "$$readme_path"
+          echo "****************************************" >> "$readme_path"
+          echo "" >> "$readme_path"
+          echo "$$changelog" >> "$$readme_path"
+          echo "" >> "$readme_path"
+          echo "----------------------------------------" >> "$readme_path"
+          
+          # 2. Append existing content
           if [ -n "$existing_content" ]; then
             echo "$$existing_content" >> "$$readme_path"
           fi
-
-          # Replace placeholders
-          sed -i "s/@@TAG@@/$$tag/g" "$$readme_path"
-          sed -i "s/@@DATE@@/$$date_str/g" "$$readme_path"
-          sed -i "s/@@CHANGELOG@@/$$changelog/g" "$$readme_path"
           
           echo "✓ README updated"
 
