@@ -82,20 +82,23 @@ jobs:
           tag="${{ steps.version.outputs.TAG }}"
           changelog="${{ steps.changelog.outputs.CHANGELOG }}"
           
-          # Create new header
-          new_header="========================================
+          # Use a Here-Document to write the file safely
+          # The 'EOF' is quoted so variables are NOT expanded by bash immediately, 
+          # but we use $() for commands and $var for our variables which ARE expanded.
+          # Actually, for GitHub vars, we need unquoted EOF to expand ${{ }}
+          
+          cat > "$readme_path" << EOF
+========================================
 YR_TO_RA2 Mod - Version $tag
 Released: $date_str
 ========================================
 
 $changelog
 
-----------------------------------------"
+----------------------------------------
+$existing_content
+EOF
           
-          # Combine
-          final_content="$$new_header"$$'\n'"$existing_content"
-          
-          echo "$$final_content" > "$$readme_path"
           echo "✓ README updated"
 
       - name: Set up Go
