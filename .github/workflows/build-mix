@@ -1,0 +1,32 @@
+name: Build expandmd24.mix
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build-mix:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1️⃣ Checkout your repo
+      - uses: actions/checkout@v4
+
+      # 2️⃣ Install Wine to run the Windows MIX Editor
+      - name: Install Wine
+        run: sudo apt-get update && sudo apt-get install -y wine
+
+      # 3️⃣ Pack the folder into expandmd24.mix
+      - name: Create expandmd24.mix
+        run: |
+          cd Source
+          # Pack all files from expandmd24.mix folder into expandmd24.mix
+          wine ../MixEditor.exe -a expandmd24.mix/* expandmd24.mix
+
+      # 4️⃣ Upload the resulting expandmd24.mix
+      - name: Upload MIX artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: expandmd24.mix
+          path: Source/expandmd24.mix
