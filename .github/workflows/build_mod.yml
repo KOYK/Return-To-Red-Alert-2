@@ -59,7 +59,7 @@ jobs:
             Copy-Item $_.FullName -Destination $tempFolder -Recurse -Force
           }
 
-          Compress-Archive -Path "$tempFolder\*" -DestinationPath "RA2_Mod_Package.zip" -CompressionLevel Optimal -Force
+          Compress-Archive -Path "$tempFolder\*" -DestinationPath "YR_TO_RA2.zip" -CompressionLevel Optimal -Force
           
           Write-Host "✓ ZIP archive created"
           Remove-Item -Recurse -Force $tempFolder
@@ -67,15 +67,15 @@ jobs:
       - name: Create Release and Upload Asset
         uses: softprops/action-gh-release@v2
         with:
-          files: RA2_Mod_Package.zip
+          files: YR_TO_RA2.zip
           tag_name: ${{ github.ref_name }}
           name: Release ${{ github.ref_name }}
           body: |
-            ## RA2 Mod Package
+            ## YR TO RA2
             
             **Contents:**
             - `expandmd24.mix`: The packed mod archive (created with ccmixar).
-            - `RA2_Mod_Package.zip`: Full package.
+            - `YR_TO_RA2.zip`: Full package.
             
             **Installation:**
             1. Extract the ZIP.
