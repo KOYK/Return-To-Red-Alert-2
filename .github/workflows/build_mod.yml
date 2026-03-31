@@ -8,10 +8,15 @@ on:
       - 'scripts/pack_mix.py'
       - '.github/workflows/build_mod.yml'
   workflow_dispatch:
+  # This triggers the release logic when you create a tag (e.g., v1.0)
+  release:
+    types: [published]
 
 jobs:
   build:
     runs-on: windows-latest
+    # Only run build if it's a release or manual trigger, or push to specific paths
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.event_name == 'release'
 
     steps:
       - name: Checkout Code
@@ -31,37 +36,43 @@ jobs:
 
       - name: Create ZIP Archive (Max Compression)
         run: |
-          # Create a temporary folder to gather files
           $tempFolder = "dist_temp"
-          
-          # Clean up any existing temp folder first
-          if (Test-Path $tempFolder) {
-            Remove-Item -Recurse -Force $tempFolder
-          }
-          
-          # Create fresh temp folder
+          if (Test-Path $tempFolder) { Remove-Item -Recurse -Force $tempFolder }
           New-Item -ItemType Directory -Force -Path $tempFolder | Out-Null
 
-          # 1. Copy the packed MIX file
           Copy-Item "expandmd24.mix" -Destination $tempFolder
 
-          # 2. Copy ALL files from Source/ EXCEPT the expandmd24 folder
-          # Get all items (files and folders) except expandmd24
           Get-ChildItem -Path "Source" -Exclude "expandmd24" | ForEach-Object {
             Copy-Item $_.FullName -Destination $tempFolder -Recurse -Force
           }
 
-          # 3. Create ZIP with Maximum Compression
           Compress-Archive -Path "$tempFolder\*" -DestinationPath "RA2_Mod_Package.zip" -CompressionLevel Optimal -Force
-
-          Write-Host "✓ ZIP archive created with max compression"
-
-          # Cleanup temp folder
+          Write-Host "✓ ZIP archive created"
           Remove-Item -Recurse -Force $tempFolder
 
-      - name: Upload Artifact
+      - name: Upload Artifact (For Actions Tab)
         uses: actions/upload-artifact@v4
         with:
           name: RA2-Mod-Package
           path: RA2_Mod_Package.zip
           retention-days: 30
+
+  # NEW JOB: Attach to Release
+  upload-release:
+    needs: build
+    runs-on: ubuntu-latest
+    # Only run if the event is a published release
+    if: github.event_name == 'release'
+    
+    steps:
+      - name: Download Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: RA2-Mod-Package
+
+      - name: Upload Release Asset
+        uses: softprops/action-gh-release@v2
+        with:
+          files: RA2_Mod_Package.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
