@@ -22,11 +22,7 @@ jobs:
         with:
           python-version: '3.x'
 
-      - name: Install cnc-mix Library
-        run: pip install cnc-mix
-        shell: pwsh
-
-      - name: Pack MIX File
+      - name: Pack MIX File (Self-Contained)
         run: |
           python scripts/pack_mix.py Source/expandmd24 expandmd24.mix
           if (-not (Test-Path "expandmd24.mix")) { throw "MIX creation failed" }
