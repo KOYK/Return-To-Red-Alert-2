@@ -4,6 +4,12 @@ on:
   push:
     tags:
       - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version number (e.g., v1.0)'
+        required: true
+        default: 'v1.0'
 
 permissions:
   contents: write
@@ -21,11 +27,15 @@ jobs:
       - name: Extract Version
         id: version
         run: |
-          $tag = $env:GITHUB_REF_NAME
+          if ($env:GITHUB_EVENT_NAME -eq 'workflow_dispatch') {
+            $tag = ${{ github.event.inputs.version }}
+          } else {
+            $tag = $env:GITHUB_REF_NAME
+          }
           $version = $tag -replace '^v', ''
           echo "VERSION=$version" >> $env:GITHUB_OUTPUT
           echo "TAG=$tag" >> $env:GITHUB_OUTPUT
-          Write-Host "Version: $version"
+          Write-Host "Version: $version (Tag: $tag)"
         shell: pwsh
 
       - name: Generate Changelog
@@ -64,7 +74,6 @@ jobs:
           $$tag = "$${{ steps.version.outputs.TAG }}"
           $$changelog = "$${{ steps.changelog.outputs.CHANGELOG }}"
           
-          # Build the new header line by line to avoid YAML escaping issues
           $headerLines = @(
             "========================================",
             "YR_TO_RA2 Mod - Version $tag",
@@ -139,7 +148,6 @@ jobs:
           $$version = "$${{ steps.version.outputs.VERSION }}"
           $$tag = "$${{ steps.version.outputs.TAG }}"
           
-          # Build the ISS content line by line to avoid YAML escaping issues
           $issLines = @(
             "[Setup]",
             "AppName=YR_TO_RA2 Mod",
@@ -222,12 +230,7 @@ jobs:
             ${{ steps.changelog.outputs.CHANGELOG }}
             
             **Downloads:**
-            - [Portable ZIP](#) - For manual installation
-            - [Installer EXE](#) - For automatic installation (removes old version)
-            
-            **Installation:**
-            1. Run the installer OR extract the ZIP
-            2. Place files in your Red Alert 2/Yuri's Revenge folder
-            3. Run `RunAres.bat` to launch
+            - [Portable ZIP](#)
+            - [Installer EXE](#)
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
