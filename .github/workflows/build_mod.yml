@@ -16,7 +16,7 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # Fetch all history for changelog
+          fetch-depth: 0
 
       - name: Extract Version
         id: version
@@ -31,7 +31,6 @@ jobs:
       - name: Generate Changelog
         id: changelog
         run: |
-          # Get commits since last tag
           $$prevTag = git describe --tags --abbrev=0 HEAD^ 2>$$null
           if ($LASTEXITCODE -ne 0) { $prevTag = "" }
           
@@ -41,13 +40,15 @@ jobs:
             $commits = git log --pretty=format:"* %s" HEAD
           }
           
-          $changelog = @"
-## Changelog for ${{ steps.version.outputs.TAG }}
-$commits
-"@
+          $changelogHeader = "## Changelog for ${{ steps.version.outputs.TAG }}"
           
+          # Write to a temp file to avoid YAML escaping issues
+          Set-Content -Path "changelog_temp.txt" -Value "$$changelogHeader`n$$commits"
+          
+          # Read it back and set output
+          $content = Get-Content "changelog_temp.txt" -Raw
           echo "CHANGELOG<<EOF" >> $env:GITHUB_OUTPUT
-          echo "$changelog" >> $env:GITHUB_OUTPUT
+          echo "$content" >> $env:GITHUB_OUTPUT
           echo "EOF" >> $env:GITHUB_OUTPUT
         shell: pwsh
 
@@ -56,13 +57,11 @@ $commits
           $readmePath = "YR_TO_RA2_readme.txt"
           $existingContent = ""
           
-          # Read existing README if it exists
           if (Test-Path $readmePath) {
             $existingContent = Get-Content $readmePath -Raw
           }
           
-          # Create new README with version info at top
-          $newContent = @"
+          $newHeader = @"
 ========================================
 YR_TO_RA2 Mod - Version ${{ steps.version.outputs.TAG }}
 Released: $(Get-Date -Format "yyyy-MM-dd")
@@ -71,12 +70,11 @@ Released: $(Get-Date -Format "yyyy-MM-dd")
 ${{ steps.changelog.outputs.CHANGELOG }}
 
 ----------------------------------------
-Previous Versions:
-$existingContent
 "@
           
-          Set-Content -Path $readmePath -Value $newContent -Encoding UTF8
-          Write-Host "✓ README updated with version ${{ steps.version.outputs.TAG }}"
+          $$finalContent = "$$newHeader`n$existingContent"
+          Set-Content -Path $readmePath -Value $finalContent -Encoding UTF8
+          Write-Host "✓ README updated"
         shell: pwsh
 
       - name: Set up Go
@@ -101,11 +99,8 @@ $existingContent
       - name: Pack MIX File using ccmixar
         run: |
           .\scripts\ccmixar.exe pack -dir Source\expandmd24 -mix expandmd24.mix -game ra2
-          
-          if (-not (Test-Path "expandmd24.mix")) { 
-            throw "MIX creation failed" 
-          }
-          Write-Host "✓ MIX file created successfully"
+          if (-not (Test-Path "expandmd24.mix")) { throw "MIX creation failed" }
+          Write-Host "✓ MIX file created"
         shell: pwsh
 
       - name: Create Version Marker
@@ -129,22 +124,24 @@ $existingContent
           }
 
           Compress-Archive -Path "$$tempFolder\*" -DestinationPath "YR_TO_RA2_$${{ steps.version.outputs.VERSION }}.zip" -CompressionLevel Optimal -Force
-          
           Write-Host "✓ Portable ZIP created"
           Remove-Item -Recurse -Force $tempFolder
         shell: pwsh
 
       - name: Create Installer Script
         run: |
+          $$version = "$${{ steps.version.outputs.VERSION }}"
+          $$tag = "$${{ steps.version.outputs.TAG }}"
+          
           $issContent = @"
 [Setup]
 AppName=YR_TO_RA2 Mod
-AppVersion=${{ steps.version.outputs.VERSION }}
+AppVersion=$version
 AppPublisher=KOYK
 DefaultDirName={autopf}\Westwood\Red Alert 2
 DefaultGroupName=YR_TO_RA2 Mod
 OutputDir=dist
-OutputBaseFilename=YR_TO_RA2_${{ steps.version.outputs.VERSION }}_Installer
+OutputBaseFilename=YR_TO_RA2_${version}_Installer
 Compression=lzma2
 SolidCompression=yes
 WizardStyle=modern
@@ -165,16 +162,13 @@ var
 begin
   if CurStep = ssPostInstall then
   begin
-    // Check if expandmd24.mix exists (old installation)
     MixExists := FileExists(ExpandConstant('{app}\expandmd24.mix'));
     if MixExists then
     begin
-      // Delete old mix file
       DelFile(ExpandConstant('{app}\expandmd24.mix'));
       MsgBox('Old expandmd24.mix file removed.', mbInformation, MB_OK);
     end;
     
-    // Check version marker
     if FileExists(ExpandConstant('{app}\YR_TO_RA2_VERSION.txt')) then
     begin
       LoadStringFromFile(ExpandConstant('{app}\YR_TO_RA2_VERSION.txt'), OldVersion);
@@ -203,7 +197,7 @@ Name: "{group}\{cm:UninstallProgram,YR_TO_RA2 Mod}"; Filename: "{uninstallexe}"
             throw "Installer build failed" 
           }
           Move-Item "dist\YR_TO_RA2_${{ steps.version.outputs.VERSION }}_Installer.exe" "." -Force
-          Write-Host "✓ Installer created successfully"
+          Write-Host "✓ Installer created"
         shell: pwsh
 
       - name: Create Release and Upload Assets
@@ -217,7 +211,7 @@ Name: "{group}\{cm:UninstallProgram,YR_TO_RA2 Mod}"; Filename: "{uninstallexe}"
           body: |
             ## YR_TO_RA2 Mod - ${{ steps.version.outputs.TAG }}
             
-            ${ { steps.changelog.outputs.CHANGELOG }}
+            ${{ steps.changelog.outputs.CHANGELOG }}
             
             **Downloads:**
             - [Portable ZIP](#) - For manual installation
