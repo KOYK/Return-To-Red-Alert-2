@@ -38,9 +38,19 @@ jobs:
 
       - name: Pack MIX File using ccmixar
         run: |
-          .\scripts\ccmixar.exe pack Source\expandmd24 expandmd24.mix
+          # Try syntax: ccmixar pack <output> <input> (Output first)
+          Write-Host "Attempting: .\scripts\ccmixar.exe pack expandmd24.mix Source\expandmd24"
+          .\scripts\ccmixar.exe pack expandmd24.mix Source\expandmd24
           
-          if (-not (Test-Path "expandmd24.mix")) { throw "MIX creation failed" }
+          if (-not (Test-Path "expandmd24.mix")) { 
+            Write-Host "First attempt failed. Trying with -d flag..."
+            # Try syntax with explicit directory flag
+            .\scripts\ccmixar.exe pack -d Source\expandmd24 expandmd24.mix
+          }
+          
+          if (-not (Test-Path "expandmd24.mix")) { 
+            throw "MIX creation failed. Check ccmixar syntax." 
+          }
           Write-Host "✓ MIX file created successfully with ccmixar"
         shell: pwsh
 
