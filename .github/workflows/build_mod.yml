@@ -168,59 +168,61 @@ jobs:
         shell: bash
         run: |
           version="${{ steps.version.outputs.VERSION }}"
-          tag="${{ steps.version.outputs.TAG }}"
           
-          cat > installer.iss << 'ISS_EOF'
-[Setup]
-AppName=YR_TO_RA2 Mod
-AppVersion=VERSION_PLACEHOLDER
-AppPublisher=KOYK
-DefaultDirName={autopf}\Westwood\Red Alert 2
-DefaultGroupName=YR_TO_RA2 Mod
-OutputDir=dist
-OutputBaseFilename=YR_TO_RA2_VERSION_PLACEHOLDER_Installer
-Compression=lzma2
-SolidCompression=yes
-WizardStyle=modern
-
-[Files]
-Source: "expandmd24.mix"; DestDir: "{app}"; Flags: ignoreversion
-Source: "YR_TO_RA2_readme.txt"; DestDir: "{app}"; Flags: ignoreversion
-Source: "YR_TO_RA2_VERSION.txt"; DestDir: "{app}"; Flags: ignoreversion
-Source: "Source\*.bat"; DestDir: "{app}"; Flags: ignoreversion
-Source: "Source\*.ini"; DestDir: "{app}"; Flags: ignoreversion
-Source: "Source\*.cfg"; DestDir: "{app}"; Flags: ignoreversion
-
-[Code]
-procedure CurStepChanged(CurStep: TSetupStep);
-var
-  OldVersion: String;
-  MixExists: Boolean;
-begin
-  if CurStep = ssPostInstall then
-  begin
-    MixExists := FileExists(ExpandConstant('{app}\expandmd24.mix'));
-    if MixExists then
-    begin
-      DelFile(ExpandConstant('{app}\expandmd24.mix'));
-      MsgBox('Old expandmd24.mix file removed.', mbInformation, MB_OK);
-    end;
-    
-    if FileExists(ExpandConstant('{app}\YR_TO_RA2_VERSION.txt')) then
-    begin
-      LoadStringFromFile(ExpandConstant('{app}\YR_TO_RA2_VERSION.txt'), OldVersion);
-      MsgBox('Previous version: ' + OldVersion, mbInformation, MB_OK);
-    end;
-  end;
-end;
-
-[Icons]
-Name: "{group}\Run Mod"; Filename: "{app}\RunAres.bat"
-Name: "{group}\{cm:UninstallProgram,YR_TO_RA2 Mod}"; Filename: "{uninstallexe}"
-ISS_EOF
-
-          # Replace placeholders
-          sed -i "s/VERSION_PLACEHOLDER/$version/g" installer.iss
+          # 1. Write [Setup] section
+          echo "[Setup]" > installer.iss
+          echo "AppName=YR_TO_RA2 Mod" >> installer.iss
+          echo "AppVersion=$version" >> installer.iss
+          echo "AppPublisher=KOYK" >> installer.iss
+          echo "DefaultDirName={autopf}\\Westwood\\Red Alert 2" >> installer.iss
+          echo "DefaultGroupName=YR_TO_RA2 Mod" >> installer.iss
+          echo "OutputDir=dist" >> installer.iss
+          echo "OutputBaseFilename=YR_TO_RA2_${version}_Installer" >> installer.iss
+          echo "Compression=lzma2" >> installer.iss
+          echo "SolidCompression=yes" >> installer.iss
+          echo "WizardStyle=modern" >> installer.iss
+          echo "" >> installer.iss
+          
+          # 2. Write [Files] section
+          echo "[Files]" >> installer.iss
+          echo "Source: \"expandmd24.mix\"; DestDir: \"{app}\"; Flags: ignoreversion" >> installer.iss
+          echo "Source: \"YR_TO_RA2_readme.txt\"; DestDir: \"{app}\"; Flags: ignoreversion" >> installer.iss
+          echo "Source: \"YR_TO_RA2_VERSION.txt\"; DestDir: \"{app}\"; Flags: ignoreversion" >> installer.iss
+          echo "Source: \"Source\\*.bat\"; DestDir: \"{app}\"; Flags: ignoreversion" >> installer.iss
+          echo "Source: \"Source\\*.ini\"; DestDir: \"{app}\"; Flags: ignoreversion" >> installer.iss
+          echo "Source: \"Source\\*.cfg\"; DestDir: \"{app}\"; Flags: ignoreversion" >> installer.iss
+          echo "" >> installer.iss
+          
+          # 3. Write [Code] section
+          echo "[Code]" >> installer.iss
+          echo "procedure CurStepChanged(CurStep: TSetupStep);" >> installer.iss
+          echo "var" >> installer.iss
+          echo "  OldVersion: String;" >> installer.iss
+          echo "  MixExists: Boolean;" >> installer.iss
+          echo "begin" >> installer.iss
+          echo "  if CurStep = ssPostInstall then" >> installer.iss
+          echo "  begin" >> installer.iss
+          echo "    MixExists := FileExists(ExpandConstant('{app}\\expandmd24.mix'));" >> installer.iss
+          echo "    if MixExists then" >> installer.iss
+          echo "    begin" >> installer.iss
+          echo "      DelFile(ExpandConstant('{app}\\expandmd24.mix'));" >> installer.iss
+          echo "      MsgBox('Old expandmd24.mix file removed.', mbInformation, MB_OK);" >> installer.iss
+          echo "    end;" >> installer.iss
+          echo "    " >> installer.iss
+          echo "    if FileExists(ExpandConstant('{app}\\YR_TO_RA2_VERSION.txt')) then" >> installer.iss
+          echo "    begin" >> installer.iss
+          echo "      LoadStringFromFile(ExpandConstant('{app}\\YR_TO_RA2_VERSION.txt'), OldVersion);" >> installer.iss
+          echo "      MsgBox('Previous version: ' + OldVersion, mbInformation, MB_OK);" >> installer.iss
+          echo "    end;" >> installer.iss
+          echo "  end;" >> installer.iss
+          echo "end;" >> installer.iss
+          echo "" >> installer.iss
+          
+          # 4. Write [Icons] section
+          echo "[Icons]" >> installer.iss
+          echo "Name: \"{group}\\Run Mod\"; Filename: \"{app}\\RunAres.bat\"" >> installer.iss
+          echo "Name: \"{group}\\{cm:UninstallProgram,YR_TO_RA2 Mod}\"; Filename: \"{uninstallexe}\"" >> installer.iss
+          
           echo "✓ Installer script created"
 
       - name: Install Inno Setup
