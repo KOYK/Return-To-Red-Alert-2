@@ -24,20 +24,27 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Extract Version
+      - name: Set Version File
+        run: |
+          # Determine version based on event
+          if ("${{ github.event_name }}" -eq "workflow_dispatch") {
+            $$ver = "$${{ github.event.inputs.version }}"
+          } else {
+            $$ver = "$${{ github.ref_name }}"
+          }
+          # Write to file
+          Set-Content -Path "version.txt" -Value $ver
+          Write-Host "Version set to: $ver"
+        shell: pwsh
+
+      - name: Read Version
         id: version
         run: |
-          # Check if we are in a manual run
-          if ("${{ github.event_name }}" == "workflow_dispatch") {
-            $$tag = "$${{ github.event.inputs.version }}"
-          } else {
-            $$tag = "$${{ github.ref_name }}"
-          }
-          
+          $tag = Get-Content "version.txt"
           $version = $tag -replace '^v', ''
           echo "VERSION=$version" >> $env:GITHUB_OUTPUT
           echo "TAG=$tag" >> $env:GITHUB_OUTPUT
-          Write-Host "Tag: $tag"
+          Write-Host "Read Tag: $tag"
         shell: pwsh
 
       - name: Generate Changelog
