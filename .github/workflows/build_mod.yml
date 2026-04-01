@@ -48,67 +48,63 @@ jobs:
 
       - name: Generate Changelog
         id: changelog
-        shell: bash
+        shell: pwsh
         run: |
-          # Get previous tag safely
-          prev_tag=`git describe --tags --abbrev=0 HEAD^ 2>/dev/null` || prev_tag=""
+          # Get previous tag
+          $$prevTag = git describe --tags --abbrev=0 HEAD^ 2>$$null
+          if ($LASTEXITCODE -ne 0) { $prevTag = "" }
           
           # Get commits
-          if [ -n "$prev_tag" ]; then
-            commits=`git log --pretty=format:"* %s" "$prev_tag"..HEAD`
-          else
-            commits=`git log --pretty=format:"* %s" HEAD`
-          fi
+          if ($prevTag) {
+            $$commits = git log --pretty=format:"* %s" "$$prevTag"..HEAD
+          } else {
+            $commits = git log --pretty=format:"* %s" HEAD
+          }
           
-          # Construct changelog
-          changelog_header="## Changelog for ${{ github.ref_name }}"
-          changelog_full="$$changelog_header"$$'\n'"$commits"
+          $changelogHeader = "## Changelog for ${{ github.ref_name }}"
+          $$changelogFull = "$$changelogHeader`n$commits"
           
-          # Write to temp file
-          echo "$changelog_full" > changelog_temp.txt
+          # Write to file to avoid output escaping issues
+          Set-Content -Path "changelog_temp.txt" -Value $changelogFull
+          $content = Get-Content "changelog_temp.txt" -Raw
           
-          # Read back and set output
-          content=`cat changelog_temp.txt`
+          echo "CHANGELOG<<EOF" >> $env:GITHUB_OUTPUT
+          echo "$content" >> $env:GITHUB_OUTPUT
+          echo "EOF" >> $env:GITHUB_OUTPUT
           
-          echo "CHANGELOG<<EOF" >> $GITHUB_OUTPUT
-          echo "$content" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
+          Write-Host "Changelog generated"
 
       - name: Update README
-        shell: bash
+        shell: pwsh
         run: |
-          readme_path="YR_TO_RA2_readme.txt"
-          existing_content=""
+          $readmePath = "YR_TO_RA2_readme.txt"
+          $existingContent = ""
           
-          if [ -f "$readme_path" ]; then
-            existing_content=$$(cat "$$readme_path")
-          fi
+          if (Test-Path $readmePath) {
+            $existingContent = Get-Content $readmePath -Raw
+          }
           
-          date_str=$(date +%Y-%m-%d)
-          tag="${{ steps.version.outputs.TAG }}"
-          # Escape special characters in changelog for safe printing
-          # We use printf '%s' to treat the variable as a literal string
-          changelog="${{ steps.changelog.outputs.CHANGELOG }}"
+          $dateStr = Get-Date -Format "yyyy-MM-dd"
+          $$tag = "$${{ steps.version.outputs.TAG }}"
+          $$changelog = "$${{ steps.changelog.outputs.CHANGELOG }}"
           
-          # 1. Create/Overwrite the file with the NEW header (Line by Line)
-          printf '%s\n' "****************************************" > "$readme_path"
-          printf '%s\n' "YR_TO_RA2 Mod - Version $$tag" >> "$$readme_path"
-          printf '%s\n' "Released: $$date_str" >> "$$readme_path"
-          printf '%s\n' "****************************************" >> "$readme_path"
-          printf '\n' >> "$readme_path"
+          # Build header lines
+          $headerLines = @(
+            "****************************************",
+            "YR_TO_RA2 Mod - Version $tag",
+            "Released: $dateStr",
+            "****************************************",
+            "",
+            $changelog,
+            "",
+            "----------------------------------------"
+          )
           
-          # Print changelog safely (treat as literal text)
-          printf '%s\n' "$$changelog" >> "$$readme_path"
+          $newHeader = $headerLines -join "`n"
+          $$finalContent = "$$newHeader`n$existingContent"
           
-          printf '\n' >> "$readme_path"
-          printf '%s\n' "----------------------------------------" >> "$readme_path"
-          
-          # 2. Append existing content safely
-          if [ -n "$existing_content" ]; then
-            printf '%s\n' "$$existing_content" >> "$$readme_path"
-          fi
-          
-          echo "✓ README updated"
+          Set-Content -Path $readmePath -Value $finalContent -Encoding UTF8
+          Write-Host "✓ README updated"
 
       - name: Set up Go
         uses: actions/setup-go@v5
