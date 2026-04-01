@@ -46,46 +46,18 @@ jobs:
           echo "Detected Tag: $tag"
           echo "Detected Version: $version"
 
-      - name: Generate Changelog
+      - name: Generate Changelog with changelog-ci
         id: changelog
-        env:
-          REF_NAME: ${{ github.ref_name }}
-        shell: pwsh
-        run: |
-          $ErrorActionPreference = 'SilentlyContinue'
-          
-          # Get previous tag
-          $prevTag = git describe --tags --abbrev=0 HEAD^ -ErrorAction SilentlyContinue
-          if (-not $prevTag) { $prevTag = "" }
-          
-          # Get commits
-          if ($prevTag) {
-            $$commits = git log --pretty=format:"* %s" "$$prevTag"..HEAD
-          } else {
-            $commits = git log --pretty=format:"* %s" HEAD
-          }
-          
-          $changelogHeader = "## Changelog for $env:REF_NAME"
-          $$changelogFull = "$$changelogHeader`n$commits"
-          
-          # Write to file
-          Set-Content -Path "changelog_temp.txt" -Value $changelogFull
-          $content = Get-Content "changelog_temp.txt" -Raw
-          
-          echo "CHANGELOG<<EOF" >> $env:GITHUB_OUTPUT
-          echo "$content" >> $env:GITHUB_OUTPUT
-          echo "EOF" >> $env:GITHUB_OUTPUT
-          
-          Write-Host "Changelog generated"
+        uses: orhun/changelog-ci@v1.2.0
+        with:
+          version: ${{ steps.version.outputs.TAG }}
+          output: CHANGELOG.md
+          # Optional: Customize the changelog format
+          # commit-message-pattern: "^(feat|fix|docs|style|refactor|test|chore)(\$$.+\$$)?: .+"
 
       - name: Update README
-        env:
-          VERSION_TAG: ${{ steps.version.outputs.TAG }}
-          CHANGELOG: ${{ steps.changelog.outputs.CHANGELOG }}
         shell: pwsh
         run: |
-          $ErrorActionPreference = 'SilentlyContinue'
-          
           $readmePath = "YR_TO_RA2_readme.txt"
           $existingContent = ""
           
@@ -94,8 +66,9 @@ jobs:
           }
           
           $dateStr = Get-Date -Format "yyyy-MM-dd"
-          $tag = $env:VERSION_TAG
-          $changelog = $env:CHANGELOG
+          $$tag = "$${{ steps.version.outputs.TAG }}"
+          # Read the generated changelog
+          $changelog = Get-Content "CHANGELOG.md" -Raw
           
           # Build header lines
           $headerLines = @(
@@ -165,16 +138,12 @@ jobs:
           cp YR_TO_RA2_VERSION.txt "$temp_folder/"
 
           # Copy Source contents excluding expandmd24
-          cp -r Source/* "$temp_folder/" --exclude="expandmd24" 2>/dev/null || true
-          # Handle nested directories if needed, but -r usually covers it
-          # If specific files are needed:
           find Source -mindepth 1 -maxdepth 1 -type d ! -name "expandmd24" -exec cp -r {} "$temp_folder/" \;
           find Source -mindepth 1 -maxdepth 1 -type f -exec cp {} "$temp_folder/" \;
 
           version="${{ steps.version.outputs.VERSION }}"
           zip_name="YR_TO_RA2_${version}.zip"
           
-          # Create ZIP
           powershell -Command "Compress-Archive -Path '$$temp_folder/*' -DestinationPath '$$zip_name' -CompressionLevel Optimal -Force"
           
           echo "✓ Portable ZIP created"
@@ -185,7 +154,6 @@ jobs:
         run: |
           version="${{ steps.version.outputs.VERSION }}"
           
-          # 1. Write [Setup] section
           echo "[Setup]" > installer.iss
           echo "AppName=YR_TO_RA2 Mod" >> installer.iss
           echo "AppVersion=$version" >> installer.iss
@@ -199,7 +167,6 @@ jobs:
           echo "WizardStyle=modern" >> installer.iss
           echo "" >> installer.iss
           
-          # 2. Write [Files] section
           echo "[Files]" >> installer.iss
           echo "Source: \"expandmd24.mix\"; DestDir: \"{app}\"; Flags: ignoreversion" >> installer.iss
           echo "Source: \"YR_TO_RA2_readme.txt\"; DestDir: \"{app}\"; Flags: ignoreversion" >> installer.iss
@@ -209,7 +176,6 @@ jobs:
           echo "Source: \"Source\\*.cfg\"; DestDir: \"{app}\"; Flags: ignoreversion" >> installer.iss
           echo "" >> installer.iss
           
-          # 3. Write [Code] section
           echo "[Code]" >> installer.iss
           echo "procedure CurStepChanged(CurStep: TSetupStep);" >> installer.iss
           echo "var" >> installer.iss
@@ -234,7 +200,6 @@ jobs:
           echo "end;" >> installer.iss
           echo "" >> installer.iss
           
-          # 4. Write [Icons] section
           echo "[Icons]" >> installer.iss
           echo "Name: \"{group}\\Run Mod\"; Filename: \"{app}\\RunAres.bat\"" >> installer.iss
           echo "Name: \"{group}\\{cm:UninstallProgram,YR_TO_RA2 Mod}\"; Filename: \"{uninstallexe}\"" >> installer.iss
@@ -268,7 +233,7 @@ jobs:
           body: |
             ## YR_TO_RA2 Mod - ${{ steps.version.outputs.TAG }}
             
-            ${{ steps.changelog.outputs.CHANGELOG }}
+            ${{ steps.changelog.outputs.body }}
             
             **Downloads:**
             - [Portable ZIP](#)
