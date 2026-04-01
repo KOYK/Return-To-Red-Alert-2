@@ -50,9 +50,12 @@ jobs:
         id: changelog
         shell: pwsh
         run: |
+          # Suppress errors WITHOUT using $null (avoids $$null corruption)
+          $ErrorActionPreference = 'SilentlyContinue'
+          
           # Get previous tag
-          $$prevTag = git describe --tags --abbrev=0 HEAD^ 2>$$null
-          if ($LASTEXITCODE -ne 0) { $prevTag = "" }
+          $prevTag = git describe --tags --abbrev=0 HEAD^ -ErrorAction SilentlyContinue
+          if (-not $prevTag) { $prevTag = "" }
           
           # Get commits
           if ($prevTag) {
@@ -64,7 +67,7 @@ jobs:
           $changelogHeader = "## Changelog for ${{ github.ref_name }}"
           $$changelogFull = "$$changelogHeader`n$commits"
           
-          # Write to file to avoid output escaping issues
+          # Write to file
           Set-Content -Path "changelog_temp.txt" -Value $changelogFull
           $content = Get-Content "changelog_temp.txt" -Raw
           
@@ -77,6 +80,8 @@ jobs:
       - name: Update README
         shell: pwsh
         run: |
+          $ErrorActionPreference = 'SilentlyContinue'
+          
           $readmePath = "YR_TO_RA2_readme.txt"
           $existingContent = ""
           
