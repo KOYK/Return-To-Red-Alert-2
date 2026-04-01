@@ -48,10 +48,23 @@ jobs:
 
       - name: Generate Changelog
         id: changelog
-        uses: ahmetb/changelog-ci@v1.2.0
-        with:
-          version: ${{ steps.version.outputs.TAG }}
-          output: CHANGELOG.md
+        shell: bash
+        run: |
+          prev_tag=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
+          
+          if [ -n "$prev_tag" ]; then
+            commits=$$(git log --pretty=format:"* %s" "$$prev_tag"..HEAD)
+          else
+            commits=$(git log --pretty=format:"* %s" HEAD)
+          fi
+          
+          changelog_header="## Changelog for ${{ steps.version.outputs.TAG }}"
+          changelog_full="$$changelog_header"$$'\n'"$commits"
+          
+          echo "$changelog_full" > CHANGELOG.md
+          echo "body=$(cat CHANGELOG.md)" >> $GITHUB_OUTPUT
+          
+          echo "Changelog generated"
 
       - name: Update README
         shell: pwsh
@@ -225,13 +238,6 @@ jobs:
             YR_TO_RA2_${{ steps.version.outputs.VERSION }}_Installer.exe
           tag_name: ${{ github.ref_name }}
           name: YR_TO_RA2 ${{ steps.version.outputs.TAG }}
-          body: |
-            ## YR_TO_RA2 Mod - ${{ steps.version.outputs.TAG }}
-            
-            ${{ steps.changelog.outputs.body }}
-            
-            **Downloads:**
-            - [Portable ZIP](#)
-            - [Installer EXE](#)
+          body_path: CHANGELOG.md
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
