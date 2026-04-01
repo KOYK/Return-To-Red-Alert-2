@@ -28,57 +28,6 @@ jobs:
           Write-Host "Version: $version"
         shell: pwsh
 
-      - name: Generate Changelog
-        id: changelog
-        run: |
-          # Get commits since last tag
-          $$prevTag = git describe --tags --abbrev=0 HEAD^ 2>$$null
-          if ($LASTEXITCODE -ne 0) { $prevTag = "" }
-          
-          if ($prevTag) {
-            $commits = git log --pretty=format:"* %s" $prevTag..HEAD
-          } else {
-            $commits = git log --pretty=format:"* %s" HEAD
-          }
-          
-          $changelog = @"
-## Changelog for ${{ steps.version.outputs.TAG }}
-$commits
-"@
-          
-          echo "CHANGELOG<<EOF" >> $env:GITHUB_OUTPUT
-          echo "$changelog" >> $env:GITHUB_OUTPUT
-          echo "EOF" >> $env:GITHUB_OUTPUT
-        shell: pwsh
-
-      - name: Update README
-        run: |
-          $readmePath = "YR_TO_RA2_readme.txt"
-          $existingContent = ""
-          
-          # Read existing README if it exists
-          if (Test-Path $readmePath) {
-            $existingContent = Get-Content $readmePath -Raw
-          }
-          
-          # Create new README with version info at top
-          $newContent = @"
-========================================
-YR_TO_RA2 Mod - Version ${{ steps.version.outputs.TAG }}
-Released: $(Get-Date -Format "yyyy-MM-dd")
-========================================
-
-${{ steps.changelog.outputs.CHANGELOG }}
-
-----------------------------------------
-Previous Versions:
-$existingContent
-"@
-          
-          Set-Content -Path $readmePath -Value $newContent -Encoding UTF8
-          Write-Host "✓ README updated with version ${{ steps.version.outputs.TAG }}"
-        shell: pwsh
-
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
