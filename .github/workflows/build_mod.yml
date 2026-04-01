@@ -1,15 +1,10 @@
-name: Build YR_TO_RA2 Release
+name: Build RA2 Mod ZIP
 
 on:
   push:
     tags:
       - 'v*'
   workflow_dispatch:
-    inputs:
-      version:
-        description: 'Version number (e.g., v1.0)'
-        required: true
-        default: 'v1.0'
 
 permissions:
   contents: write
@@ -21,30 +16,6 @@ jobs:
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Extract Version
-        id: version
-        shell: bash
-        run: |
-          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
-            if [ -n "${{ github.event.inputs.version }}" ]; then
-              tag="${{ github.event.inputs.version }}"
-            else
-              tag="v1.0"
-            fi
-          else
-            tag="${{ github.ref_name }}"
-          fi
-          
-          version="${tag#v}"
-          
-          echo "VERSION=$version" >> $GITHUB_OUTPUT
-          echo "TAG=$tag" >> $GITHUB_OUTPUT
-          
-          echo "Detected Tag: $tag"
-          echo "Detected Version: $version"
 
       - name: Set up Go
         uses: actions/setup-go@v5
@@ -52,137 +23,62 @@ jobs:
           go-version: '1.21'
 
       - name: Clone ccmixar Repository
-        shell: bash
         run: |
           git clone https://github.com/askeladdk/ccmixar.git ccmixar_source
-          echo "✓ ccmixar source cloned"
+          Write-Host "✓ ccmixar source cloned"
+        shell: pwsh
 
       - name: Build ccmixar
-        shell: bash
         run: |
           cd ccmixar_source
           go build -o ../scripts/ccmixar.exe .
-          if [ ! -f "../scripts/ccmixar.exe" ]; then
-            echo "Build failed"
-            exit 1
-          fi
-          echo "✓ ccmixar.exe built successfully"
+          if (-not (Test-Path "../scripts/ccmixar.exe")) { throw "Build failed" }
+          Write-Host "✓ ccmixar.exe built successfully"
+        shell: pwsh
 
       - name: Pack MIX File using ccmixar
-        shell: bash
         run: |
-          ./scripts/ccmixar.exe pack -dir Source/expandmd24 -mix expandmd24.mix -game ra2
-          if [ ! -f "expandmd24.mix" ]; then
-            echo "MIX creation failed"
-            exit 1
-          fi
-          echo "✓ MIX file created"
+          # Correct syntax: ccmixar pack -dir <input> -mix <output> -game <game_type>
+          .\scripts\ccmixar.exe pack -dir Source\expandmd24 -mix expandmd24.mix -game ra2
+          
+          if (-not (Test-Path "expandmd24.mix")) { 
+            throw "MIX creation failed" 
+          }
+          Write-Host "✓ MIX file created successfully with ccmixar"
+        shell: pwsh
 
-      - name: Create Version Marker
-        shell: bash
+      - name: Create ZIP Archive
         run: |
-          echo "${{ steps.version.outputs.TAG }}" > YR_TO_RA2_VERSION.txt
-          echo "✓ Version marker created"
+          $tempFolder = "dist_temp"
+          if (Test-Path $tempFolder) { Remove-Item -Recurse -Force $tempFolder }
+          New-Item -ItemType Directory -Force -Path $tempFolder | Out-Null
 
-      - name: Create Portable ZIP
-        shell: bash
-        run: |
-          temp_folder="dist_temp"
-          rm -rf "$temp_folder"
-          mkdir -p "$temp_folder"
+          Copy-Item "expandmd24.mix" -Destination $tempFolder
 
-          cp expandmd24.mix "$temp_folder/"
+          Get-ChildItem -Path "Source" -Exclude "expandmd24" | ForEach-Object {
+            Copy-Item $_.FullName -Destination $tempFolder -Recurse -Force
+          }
 
-          find Source -mindepth 1 -maxdepth 1 -type d ! -name "expandmd24" -exec cp -r {} "$temp_folder/" \;
-          find Source -mindepth 1 -maxdepth 1 -type f -exec cp {} "$temp_folder/" \;
-
-          version="${{ steps.version.outputs.VERSION }}"
-          zip_name="YR_TO_RA2_${version}.zip"
+          Compress-Archive -Path "$tempFolder\*" -DestinationPath "RA2_Mod_Package.zip" -CompressionLevel Optimal -Force
           
-          powershell -Command "Compress-Archive -Path '$$temp_folder/*' -DestinationPath '$$zip_name' -CompressionLevel Optimal -Force"
-          
-          echo "✓ Portable ZIP created"
-          rm -rf "$temp_folder"
+          Write-Host "✓ ZIP archive created"
+          Remove-Item -Recurse -Force $tempFolder
 
-      - name: Create Installer Script
-        shell: bash
-        run: |
-          version="${{ steps.version.outputs.VERSION }}"
-          
-          echo "[Setup]" > installer.iss
-          echo "AppName=YR_TO_RA2 Mod" >> installer.iss
-          echo "AppVersion=$version" >> installer.iss
-          echo "AppPublisher=KOYK" >> installer.iss
-          echo "DefaultDirName={autopf}\\Westwood\\Red Alert 2" >> installer.iss
-          echo "DefaultGroupName=YR_TO_RA2 Mod" >> installer.iss
-          echo "OutputDir=dist" >> installer.iss
-          echo "OutputBaseFilename=YR_TO_RA2_${version}_Installer" >> installer.iss
-          echo "Compression=lzma2" >> installer.iss
-          echo "SolidCompression=yes" >> installer.iss
-          echo "WizardStyle=modern" >> installer.iss
-          echo "" >> installer.iss
-          
-          echo "[Files]" >> installer.iss
-          echo "Source: \"expandmd24.mix\"; DestDir: \"{app}\"; Flags: ignoreversion" >> installer.iss
-          echo "Source: \"Source\\*.bat\"; DestDir: \"{app}\"; Flags: ignoreversion" >> installer.iss
-          echo "Source: \"Source\\*.ini\"; DestDir: \"{app}\"; Flags: ignoreversion" >> installer.iss
-          echo "Source: \"Source\\*.cfg\"; DestDir: \"{app}\"; Flags: ignoreversion" >> installer.iss
-          echo "" >> installer.iss
-          
-          echo "[Code]" >> installer.iss
-          echo "procedure CurStepChanged(CurStep: TSetupStep);" >> installer.iss
-          echo "var" >> installer.iss
-          echo "  OldVersion: String;" >> installer.iss
-          echo "  MixExists: Boolean;" >> installer.iss
-          echo "begin" >> installer.iss
-          echo "  if CurStep = ssPostInstall then" >> installer.iss
-          echo "  begin" >> installer.iss
-          echo "    MixExists := FileExists(ExpandConstant('{app}\\expandmd24.mix'));" >> installer.iss
-          echo "    if MixExists then" >> installer.iss
-          echo "    begin" >> installer.iss
-          echo "      DelFile(ExpandConstant('{app}\\expandmd24.mix'));" >> installer.iss
-          echo "      MsgBox('Old expandmd24.mix file removed.', mbInformation, MB_OK);" >> installer.iss
-          echo "    end;" >> installer.iss
-          echo "    " >> installer.iss
-          echo "    if FileExists(ExpandConstant('{app}\\YR_TO_RA2_VERSION.txt')) then" >> installer.iss
-          echo "    begin" >> installer.iss
-          echo "      LoadStringFromFile(ExpandConstant('{app}\\YR_TO_RA2_VERSION.txt'), OldVersion);" >> installer.iss
-          echo "      MsgBox('Previous version: ' + OldVersion, mbInformation, MB_OK);" >> installer.iss
-          echo "    end;" >> installer.iss
-          echo "  end;" >> installer.iss
-          echo "end;" >> installer.iss
-          echo "" >> installer.iss
-          
-          echo "[Icons]" >> installer.iss
-          echo "Name: \"{group}\\Run Mod\"; Filename: \"{app}\\RunAres.bat\"" >> installer.iss
-          echo "Name: \"{group}\\{cm:UninstallProgram,YR_TO_RA2 Mod}\"; Filename: \"{uninstallexe}\"" >> installer.iss
-          
-          echo "✓ Installer script created"
-
-      - name: Install Inno Setup
-        run: choco install innosetup -y
-        shell: bash
-
-      - name: Build Installer
-        shell: bash
-        run: |
-          iscc.exe installer.iss
-          version="${{ steps.version.outputs.VERSION }}"
-          if [ ! -f "dist/YR_TO_RA2_${version}_Installer.exe" ]; then
-            echo "Installer build failed"
-            exit 1
-          fi
-          mv "dist/YR_TO_RA2_${version}_Installer.exe" "."
-          echo "✓ Installer created"
-
-      - name: Create Release and Upload Assets
+      - name: Create Release and Upload Asset
         uses: softprops/action-gh-release@v2
         with:
-          files: |
-            YR_TO_RA2_${{ steps.version.outputs.VERSION }}.zip
-            YR_TO_RA2_${{ steps.version.outputs.VERSION }}_Installer.exe
+          files: RA2_Mod_Package.zip
           tag_name: ${{ github.ref_name }}
-          name: YR_TO_RA2 ${{ steps.version.outputs.TAG }}
-          body_path: CHANGELOG.md
+          name: Release ${{ github.ref_name }}
+          body: |
+            ## RA2 Mod Package
+            
+            **Contents:**
+            - `expandmd24.mix`: The packed mod archive (created with ccmixar).
+            - `RA2_Mod_Package.zip`: Full package.
+            
+            **Installation:**
+            1. Extract the ZIP.
+            2. Place `expandmd24.mix` in your Red Alert 2/Yuri's Revenge folder.
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
