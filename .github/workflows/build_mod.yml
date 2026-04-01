@@ -46,14 +46,12 @@ jobs:
           echo "Detected Tag: $tag"
           echo "Detected Version: $version"
 
-      - name: Generate Changelog with changelog-ci
+      - name: Generate Changelog
         id: changelog
-        uses: orhun/changelog-ci@v1.2.0
+        uses: ahmetb/changelog-ci@v1.2.0
         with:
           version: ${{ steps.version.outputs.TAG }}
           output: CHANGELOG.md
-          # Optional: Customize the changelog format
-          # commit-message-pattern: "^(feat|fix|docs|style|refactor|test|chore)(\$$.+\$$)?: .+"
 
       - name: Update README
         shell: pwsh
@@ -67,10 +65,8 @@ jobs:
           
           $dateStr = Get-Date -Format "yyyy-MM-dd"
           $$tag = "$${{ steps.version.outputs.TAG }}"
-          # Read the generated changelog
           $changelog = Get-Content "CHANGELOG.md" -Raw
           
-          # Build header lines
           $headerLines = @(
             "****************************************",
             "YR_TO_RA2 Mod - Version $tag",
@@ -137,7 +133,6 @@ jobs:
           cp YR_TO_RA2_readme.txt "$temp_folder/"
           cp YR_TO_RA2_VERSION.txt "$temp_folder/"
 
-          # Copy Source contents excluding expandmd24
           find Source -mindepth 1 -maxdepth 1 -type d ! -name "expandmd24" -exec cp -r {} "$temp_folder/" \;
           find Source -mindepth 1 -maxdepth 1 -type f -exec cp {} "$temp_folder/" \;
 
