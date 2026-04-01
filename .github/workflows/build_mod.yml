@@ -48,9 +48,10 @@ jobs:
 
       - name: Generate Changelog
         id: changelog
+        env:
+          REF_NAME: ${{ github.ref_name }}
         shell: pwsh
         run: |
-          # Suppress errors WITHOUT using $null (avoids $$null corruption)
           $ErrorActionPreference = 'SilentlyContinue'
           
           # Get previous tag
@@ -64,7 +65,7 @@ jobs:
             $commits = git log --pretty=format:"* %s" HEAD
           }
           
-          $changelogHeader = "## Changelog for ${{ github.ref_name }}"
+          $changelogHeader = "## Changelog for $env:REF_NAME"
           $$changelogFull = "$$changelogHeader`n$commits"
           
           # Write to file
@@ -78,6 +79,9 @@ jobs:
           Write-Host "Changelog generated"
 
       - name: Update README
+        env:
+          VERSION_TAG: ${{ steps.version.outputs.TAG }}
+          CHANGELOG: ${{ steps.changelog.outputs.CHANGELOG }}
         shell: pwsh
         run: |
           $ErrorActionPreference = 'SilentlyContinue'
@@ -90,8 +94,8 @@ jobs:
           }
           
           $dateStr = Get-Date -Format "yyyy-MM-dd"
-          $$tag = "$${{ steps.version.outputs.TAG }}"
-          $$changelog = "$${{ steps.changelog.outputs.CHANGELOG }}"
+          $tag = $env:VERSION_TAG
+          $changelog = $env:CHANGELOG
           
           # Build header lines
           $headerLines = @(
