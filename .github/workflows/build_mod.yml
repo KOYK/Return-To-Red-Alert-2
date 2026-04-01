@@ -46,26 +46,6 @@ jobs:
           echo "Detected Tag: $tag"
           echo "Detected Version: $version"
 
-      - name: Generate Changelog
-        id: changelog
-        shell: bash
-        run: |
-          prev_tag=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
-          
-          if [ -n "$prev_tag" ]; then
-            commits=$$(git log --pretty=format:"* %s" "$$prev_tag"..HEAD)
-          else
-            commits=$(git log --pretty=format:"* %s" HEAD)
-          fi
-          
-          changelog_header="## Changelog for ${{ steps.version.outputs.TAG }}"
-          changelog_full="$$changelog_header"$$'\n'"$commits"
-          
-          echo "$changelog_full" > CHANGELOG.md
-          echo "body=$(cat CHANGELOG.md)" >> $GITHUB_OUTPUT
-          
-          echo "Changelog generated"
-
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
