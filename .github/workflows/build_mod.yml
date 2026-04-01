@@ -66,37 +66,6 @@ jobs:
           
           echo "Changelog generated"
 
-      - name: Update README
-        shell: pwsh
-        run: |
-          $readmePath = "YR_TO_RA2_readme.txt"
-          $existingContent = ""
-          
-          if (Test-Path $readmePath) {
-            $existingContent = Get-Content $readmePath -Raw
-          }
-          
-          $dateStr = Get-Date -Format "yyyy-MM-dd"
-          $$tag = "$${{ steps.version.outputs.TAG }}"
-          $changelog = Get-Content "CHANGELOG.md" -Raw
-          
-          $headerLines = @(
-            "****************************************",
-            "YR_TO_RA2 Mod - Version $tag",
-            "Released: $dateStr",
-            "****************************************",
-            "",
-            $changelog,
-            "",
-            "----------------------------------------"
-          )
-          
-          $newHeader = $headerLines -join "`n"
-          $$finalContent = "$$newHeader`n$existingContent"
-          
-          Set-Content -Path $readmePath -Value $finalContent -Encoding UTF8
-          Write-Host "✓ README updated"
-
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
