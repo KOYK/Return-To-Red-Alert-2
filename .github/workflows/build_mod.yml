@@ -92,8 +92,6 @@ jobs:
           mkdir -p "$temp_folder"
 
           cp expandmd24.mix "$temp_folder/"
-          cp YR_TO_RA2_readme.txt "$temp_folder/"
-          cp YR_TO_RA2_VERSION.txt "$temp_folder/"
 
           find Source -mindepth 1 -maxdepth 1 -type d ! -name "expandmd24" -exec cp -r {} "$temp_folder/" \;
           find Source -mindepth 1 -maxdepth 1 -type f -exec cp {} "$temp_folder/" \;
@@ -126,8 +124,6 @@ jobs:
           
           echo "[Files]" >> installer.iss
           echo "Source: \"expandmd24.mix\"; DestDir: \"{app}\"; Flags: ignoreversion" >> installer.iss
-          echo "Source: \"YR_TO_RA2_readme.txt\"; DestDir: \"{app}\"; Flags: ignoreversion" >> installer.iss
-          echo "Source: \"YR_TO_RA2_VERSION.txt\"; DestDir: \"{app}\"; Flags: ignoreversion" >> installer.iss
           echo "Source: \"Source\\*.bat\"; DestDir: \"{app}\"; Flags: ignoreversion" >> installer.iss
           echo "Source: \"Source\\*.ini\"; DestDir: \"{app}\"; Flags: ignoreversion" >> installer.iss
           echo "Source: \"Source\\*.cfg\"; DestDir: \"{app}\"; Flags: ignoreversion" >> installer.iss
