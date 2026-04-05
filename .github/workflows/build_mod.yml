@@ -44,9 +44,9 @@ jobs:
 
       - name: Create Version Marker
         run: |
-          # Use the tag name directly (e.g., v1.0)
-          Set-Content -Path "YR_TO_RA2_VERSION.txt" -Value "${{ github.ref_name }}" -Encoding UTF8
-          Write-Host "✓ Version marker created: ${{ github.ref_name }}"
+          $$tag = "$${{ github.ref_name }}"
+          Set-Content -Path "YR_TO_RA2_VERSION.txt" -Value $tag -Encoding UTF8
+          Write-Host "✓ Version marker created: $tag"
         shell: pwsh
 
       - name: Create ZIP Archive
@@ -62,8 +62,10 @@ jobs:
             Copy-Item $_.FullName -Destination $tempFolder -Recurse -Force
           }
 
-          # Filename: YR_TO_RA2_Package_v1.0.zip
-          $$zipName = "YR_TO_RA2_Package_$${{ github.ref_name }}.zip"
+          # SAFELY construct filename using a variable
+          $$tag = "$${{ github.ref_name }}"
+          $$zipName = "YR_TO_RA2_Package_$$tag.zip"
+          
           Compress-Archive -Path "$tempFolder\*" -DestinationPath $zipName -CompressionLevel Optimal -Force
           
           Write-Host "✓ ZIP created: $zipName"
@@ -72,10 +74,10 @@ jobs:
 
       - name: Create Installer Script
         run: |
-          # Use tag name directly (e.g., v1.0)
+          # SAFELY construct filenames using variables
           $$tag = "$${{ github.ref_name }}"
           $version = $tag -replace '^v', ''
-          $$installerName = "YR_TO_RA2_Installer_$${tag}"
+          $$installerName = "YR_TO_RA2_Installer_$$tag"
           
           $issLines = @(
             "[Setup]",
@@ -115,7 +117,7 @@ jobs:
             "",
             "[Icons]",
             "Name: `{group}\Run Mod`"; Filename: `{app}\RunAres.bat`"",
-            "Name: `{group}\{cm:UninstallProgram,YR_TO_RA2 Mod}`"; Filename: `{uninstallexe}`""
+            "Name: `{group}\{cm:UninstallProgram,YR TO RA2 Mod}`"; Filename: `{uninstallexe}`""
           )
           
           $issContent = $issLines -join "`n"
@@ -130,7 +132,7 @@ jobs:
       - name: Build Installer
         run: |
           $$tag = "$${{ github.ref_name }}"
-          $$installerName = "YR_TO_RA2_Installer_$${tag}.exe"
+          $$installerName = "YR_TO_RA2_Installer_$$tag.exe"
           
           iscc.exe installer.iss
           
