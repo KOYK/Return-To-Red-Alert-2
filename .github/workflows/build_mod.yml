@@ -24,46 +24,45 @@ jobs:
       - name: Clone ccmixar Repository
         run: |
           git clone https://github.com/askeladdk/ccmixar.git ccmixar_source
-          Write-Host "✓ ccmixar source cloned"
+          Write-Host '✓ ccmixar source cloned'
         shell: pwsh
 
       - name: Build ccmixar
         run: |
           cd ccmixar_source
           go build -o ../scripts/ccmixar.exe .
-          if (-not (Test-Path "../scripts/ccmixar.exe")) { throw "Build failed" }
-          Write-Host "✓ ccmixar.exe built successfully"
+          if (-not (Test-Path '../scripts/ccmixar.exe')) { throw 'Build failed' }
+          Write-Host '✓ ccmixar.exe built successfully'
         shell: pwsh
 
       - name: Pack MIX File using ccmixar
         run: |
           .\scripts\ccmixar.exe pack -dir Source\expandmd24 -mix expandmd24.mix -game ra2
-          if (-not (Test-Path "expandmd24.mix")) { throw "MIX creation failed" }
-          Write-Host "✓ MIX file created"
+          if (-not (Test-Path 'expandmd24.mix')) { throw 'MIX creation failed' }
+          Write-Host '✓ MIX file created'
         shell: pwsh
 
       - name: Create Version Marker
         run: |
-          $$tag = "$${{ github.ref_name }}"
-          Set-Content -Path "YR_TO_RA2_VERSION.txt" -Value $tag -Encoding UTF8
+          $$tag = '$${{ github.ref_name }}'
+          Set-Content -Path 'YR_TO_RA2_VERSION.txt' -Value $tag -Encoding UTF8
           Write-Host "✓ Version marker created: $tag"
         shell: pwsh
 
       - name: Create ZIP Archive
         run: |
-          $tempFolder = "dist_temp"
+          $tempFolder = 'dist_temp'
           if (Test-Path $tempFolder) { Remove-Item -Recurse -Force $tempFolder }
           New-Item -ItemType Directory -Force -Path $tempFolder | Out-Null
 
-          Copy-Item "expandmd24.mix" -Destination $tempFolder
-          Copy-Item "YR_TO_RA2_VERSION.txt" -Destination $tempFolder
+          Copy-Item 'expandmd24.mix' -Destination $tempFolder
+          Copy-Item 'YR_TO_RA2_VERSION.txt' -Destination $tempFolder
 
-          Get-ChildItem -Path "Source" -Exclude "expandmd24" | ForEach-Object {
+          Get-ChildItem -Path 'Source' -Exclude 'expandmd24' | ForEach-Object {
             Copy-Item $_.FullName -Destination $tempFolder -Recurse -Force
           }
 
-          # SAFELY construct filename using a variable
-          $$tag = "$${{ github.ref_name }}"
+          $$tag = '$${{ github.ref_name }}'
           $$zipName = "YR_TO_RA2_Package_$$tag.zip"
           
           Compress-Archive -Path "$tempFolder\*" -DestinationPath $zipName -CompressionLevel Optimal -Force
@@ -74,54 +73,53 @@ jobs:
 
       - name: Create Installer Script
         run: |
-          # SAFELY construct filenames using variables
-          $$tag = "$${{ github.ref_name }}"
+          $$tag = '$${{ github.ref_name }}'
           $version = $tag -replace '^v', ''
           $$installerName = "YR_TO_RA2_Installer_$$tag"
           
           $issLines = @(
-            "[Setup]",
-            "AppName=YR_TO_RA2 Mod",
+            '[Setup]',
+            'AppName=YR_TO_RA2 Mod',
             "AppVersion=$version",
-            "AppPublisher=YR TO RA2 Mod Authors",
-            "DefaultDirName={autopf}\Games\Command & Conquer\Command & Conquer Red Alert II",
-            "DefaultGroupName=Command & Conquer\YR TO RA2 Mod",
-            "OutputDir=dist",
+            'AppPublisher=YR TO RA2 Mod Authors',
+            'DefaultDirName={autopf}\Games\Command & Conquer\Command & Conquer Red Alert II',
+            'DefaultGroupName=Command & Conquer\YR TO RA2 Mod',
+            'OutputDir=dist',
             "OutputBaseFilename=$installerName",
-            "Compression=lzma2",
-            "SolidCompression=yes",
-            "WizardStyle=modern",
-            "",
-            "[Files]",
-            "Source: `"expandmd24.mix`"; DestDir: `{app}`"; Flags: ignoreversion",
-            "Source: `"YR_TO_RA2_VERSION.txt`"; DestDir: `{app}`"; Flags: ignoreversion",
-            "Source: `"Source\*.bat`"; DestDir: `{app}`"; Flags: ignoreversion",
-            "Source: `"Source\*.ini`"; DestDir: `{app}`"; Flags: ignoreversion",
-            "Source: `"Source\*.cfg`"; DestDir: `{app}`"; Flags: ignoreversion",
-            "",
-            "[Code]",
-            "procedure CurStepChanged(CurStep: TSetupStep);",
-            "var",
-            "  MixExists: Boolean;",
-            "begin",
-            "  if CurStep = ssPostInstall then",
-            "  begin",
-            "    MixExists := FileExists(ExpandConstant(`'{app}\expandmd24.mix`'));",
-            "    if MixExists then",
-            "    begin",
-            "      DelFile(ExpandConstant(`'{app}\expandmd24.mix`'));",
-            "      MsgBox(`'Old expandmd24.mix file removed.`', mbInformation, MB_OK);",
-            "    end;",
-            "  end;",
-            "end;",
-            "",
-            "[Icons]",
+            'Compression=lzma2',
+            'SolidCompression=yes',
+            'WizardStyle=modern',
+            '',
+            '[Files]',
+            'Source: `"expandmd24.mix`"; DestDir: `{app}`"; Flags: ignoreversion',
+            'Source: `"YR_TO_RA2_VERSION.txt`"; DestDir: `{app}`"; Flags: ignoreversion',
+            'Source: `"Source\*.bat`"; DestDir: `{app}`"; Flags: ignoreversion',
+            'Source: `"Source\*.ini`"; DestDir: `{app}`"; Flags: ignoreversion',
+            'Source: `"Source\*.cfg`"; DestDir: `{app}`"; Flags: ignoreversion',
+            '',
+            '[Code]',
+            'procedure CurStepChanged(CurStep: TSetupStep);',
+            'var',
+            '  MixExists: Boolean;',
+            'begin',
+            '  if CurStep = ssPostInstall then',
+            '  begin',
+            '    MixExists := FileExists(ExpandConstant(`'{app}\expandmd24.mix`'));',
+            '    if MixExists then',
+            '    begin',
+            '      DelFile(ExpandConstant(`'{app}\expandmd24.mix`'));',
+            "      MsgBox('Old expandmd24.mix file removed.', mbInformation, MB_OK);",
+            '    end;',
+            '  end;',
+            'end;',
+            '',
+            '[Icons]',
             "Name: `{group}\Run Mod`"; Filename: `{app}\RunAres.bat`"",
             "Name: `{group}\{cm:UninstallProgram,YR TO RA2 Mod}`"; Filename: `{uninstallexe}`""
           )
           
           $issContent = $issLines -join "`n"
-          Set-Content -Path "installer.iss" -Value $issContent -Encoding UTF8
+          Set-Content -Path 'installer.iss' -Value $issContent -Encoding UTF8
           Write-Host "✓ Installer script created: $installerName"
         shell: pwsh
 
@@ -131,7 +129,7 @@ jobs:
 
       - name: Build Installer
         run: |
-          $$tag = "$${{ github.ref_name }}"
+          $$tag = '$${{ github.ref_name }}'
           $$installerName = "YR_TO_RA2_Installer_$$tag.exe"
           
           iscc.exe installer.iss
@@ -140,7 +138,7 @@ jobs:
           if (-not (Test-Path $expectedFile)) { 
             throw "Installer build failed. Expected: $expectedFile" 
           }
-          Move-Item $expectedFile "." -Force
+          Move-Item $expectedFile '.' -Force
           Write-Host "✓ Installer created: $installerName"
         shell: pwsh
 
