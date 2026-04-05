@@ -99,20 +99,7 @@ jobs:
             '[Files]',
             'Source: expandmd24.mix; DestDir: {app}; Flags: ignoreversion',
             'Source: YR_TO_RA2_VERSION.txt; DestDir: {app}; Flags: ignoreversion',
-            'Source: Source\*.bat; DestDir: {app}; Flags: ignoreversion'
-          )
-          
-          # Only add .ini files if they exist
-          if ((Get-ChildItem -Path 'Source' -Filter '*.ini' -ErrorAction SilentlyContinue).Count -gt 0) {
-            $issLines += 'Source: Source\*.ini; DestDir: {app}; Flags: ignoreversion'
-          }
-          
-          # Only add .cfg files if they exist
-          if ((Get-ChildItem -Path 'Source' -Filter '*.cfg' -ErrorAction SilentlyContinue).Count -gt 0) {
-            $issLines += 'Source: Source\*.cfg; DestDir: {app}; Flags: ignoreversion'
-          }
-          
-          $issLines += @(
+            'Source: Source\*.bat; DestDir: {app}; Flags: ignoreversion',
             '',
             '[Code]',
             'procedure CurStepChanged(CurStep: TSetupStep);',
@@ -124,7 +111,7 @@ jobs:
             '    MixExists := FileExists(ExpandConstant(''{app}\expandmd24.mix''));',
             '    if MixExists then',
             '    begin',
-            '      DelFile(ExpandConstant(''{app}\expandmd24.mix''));',
+            '      DeleteFile(ExpandConstant(''{app}\expandmd24.mix''));',
             "      MsgBox('Old expandmd24.mix file removed.', mbInformation, MB_OK);",
             '    end;',
             '  end;',
