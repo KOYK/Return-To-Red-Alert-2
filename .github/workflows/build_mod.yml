@@ -100,26 +100,14 @@ jobs:
             'Source: expandmd24.mix; DestDir: {app}; Flags: ignoreversion',
             'Source: YR_TO_RA2_VERSION.txt; DestDir: {app}; Flags: ignoreversion',
             'Source: Source\*.bat; DestDir: {app}; Flags: ignoreversion',
-            '',
-            '[Code]',
-            'procedure CurStepChanged(CurStep: TSetupStep);',
-            'var',
-            '  MixExists: Boolean;',
-            'begin',
-            '  if CurStep = ssPostInstall then',
-            '  begin',
-            '    MixExists := FileExists(ExpandConstant(''{app}\expandmd24.mix''));',
-            '    if MixExists then',
-            '    begin',
-            '      DeleteFile(ExpandConstant(''{app}\expandmd24.mix''));',
-            "      MsgBox('Old expandmd24.mix file removed.', mbInformation, MB_OK);",
-            '    end;',
-            '  end;',
-            'end;',
+            'Source: Source\*.dll; DestDir: {app}; Flags: ignoreversion',
+            'Source: Source\*.exe; DestDir: {app}; Flags: ignoreversion',
+            'Source: Source\*.inj; DestDir: {app}; Flags: ignoreversion',
+            'Source: Source\*.mix; DestDir: {app}; Flags: ignoreversion',
+            'Source: Source\*.txt; DestDir: {app}; Flags: ignoreversion',
             '',
             '[Icons]',
-            "Name: '{group}\Run Mod'; Filename: '{app}\RunAres.bat'",
-            "Name: '{group}\{cm:UninstallProgram,YR TO RA2 Mod}'; Filename: '{uninstallexe}'"
+            "Name: '{group}\Run Mod'; Filename: '{app}\RunAres.bat'"
           )
           
           $issContent = $issLines -join "`n"
@@ -157,9 +145,6 @@ jobs:
           name: YR_TO_RA2 ${{ github.ref_name }}
           body: |
             ## YR_TO_RA2 Mod - ${{ github.ref_name }}
-            
-            **Downloads:**
-            - [Portable ZIP](#)
-            - [Installer EXE](#)
+            Download the mod using either the portable ZIP or installer EXE below.
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
