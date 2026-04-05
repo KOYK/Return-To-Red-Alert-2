@@ -43,13 +43,16 @@ jobs:
         shell: pwsh
 
       - name: Create Version Marker
+        env:
+          TAG_NAME: ${{ github.ref_name }}
         run: |
-          $$tag = '$${{ github.ref_name }}'
-          Set-Content -Path 'YR_TO_RA2_VERSION.txt' -Value $tag -Encoding UTF8
-          Write-Host "✓ Version marker created: $tag"
+          Set-Content -Path 'YR_TO_RA2_VERSION.txt' -Value $env:TAG_NAME -Encoding UTF8
+          Write-Host "✓ Version marker created: $env:TAG_NAME"
         shell: pwsh
 
       - name: Create ZIP Archive
+        env:
+          TAG_NAME: ${{ github.ref_name }}
         run: |
           $tempFolder = 'dist_temp'
           if (Test-Path $tempFolder) { Remove-Item -Recurse -Force $tempFolder }
@@ -62,9 +65,7 @@ jobs:
             Copy-Item $_.FullName -Destination $tempFolder -Recurse -Force
           }
 
-          $$tag = '$${{ github.ref_name }}'
-          $$zipName = "YR_TO_RA2_Package_$$tag.zip"
-          
+          $$zipName = "YR_TO_RA2_Package_$$env:TAG_NAME.zip"
           Compress-Archive -Path "$tempFolder\*" -DestinationPath $zipName -CompressionLevel Optimal -Force
           
           Write-Host "✓ ZIP created: $zipName"
@@ -72,8 +73,10 @@ jobs:
         shell: pwsh
 
       - name: Create Installer Script
+        env:
+          TAG_NAME: ${{ github.ref_name }}
         run: |
-          $$tag = '$${{ github.ref_name }}'
+          $tag = $env:TAG_NAME
           $version = $tag -replace '^v', ''
           $$installerName = "YR_TO_RA2_Installer_$$tag"
           
@@ -128,8 +131,10 @@ jobs:
         shell: pwsh
 
       - name: Build Installer
+        env:
+          TAG_NAME: ${{ github.ref_name }}
         run: |
-          $$tag = '$${{ github.ref_name }}'
+          $tag = $env:TAG_NAME
           $$installerName = "YR_TO_RA2_Installer_$$tag.exe"
           
           iscc.exe installer.iss
