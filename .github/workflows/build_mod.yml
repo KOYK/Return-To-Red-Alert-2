@@ -16,6 +16,14 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
+      # --- STEP 1: SET VERSION (Bash - The OpenRA Way) ---
+      - name: Set Version
+        run: |
+          # Extract tag name (e.g., v1.0.3-test) and set as env var
+          echo "TAG_NAME=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
+          echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_ENV
+        shell: bash
+
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
@@ -43,16 +51,13 @@ jobs:
         shell: pwsh
 
       - name: Create Version Marker
-        env:
-          TAG_NAME: ${{ github.ref_name }}
         run: |
+          # Read from environment variable set by Bash step
           Set-Content -Path 'YR_TO_RA2_VERSION.txt' -Value $env:TAG_NAME -Encoding UTF8
           Write-Host "✓ Version marker created: $env:TAG_NAME"
         shell: pwsh
 
       - name: Create ZIP Archive
-        env:
-          TAG_NAME: ${{ github.ref_name }}
         run: |
           $tempFolder = 'dist_temp'
           if (Test-Path $tempFolder) { Remove-Item -Recurse -Force $tempFolder }
@@ -65,6 +70,7 @@ jobs:
             Copy-Item $_.FullName -Destination $tempFolder -Recurse -Force
           }
 
+          # Read from environment variable
           $$zipName = "YR_TO_RA2_Package_$$env:TAG_NAME.zip"
           Compress-Archive -Path "$tempFolder\*" -DestinationPath $zipName -CompressionLevel Optimal -Force
           
@@ -73,11 +79,10 @@ jobs:
         shell: pwsh
 
       - name: Create Installer Script
-        env:
-          TAG_NAME: ${{ github.ref_name }}
         run: |
+          # Read from environment variable
           $tag = $env:TAG_NAME
-          $version = $tag -replace '^v', ''
+          $version = $env:VERSION
           $$installerName = "YR_TO_RA2_Installer_$$tag"
           
           $issLines = @(
@@ -131,8 +136,6 @@ jobs:
         shell: pwsh
 
       - name: Build Installer
-        env:
-          TAG_NAME: ${{ github.ref_name }}
         run: |
           $tag = $env:TAG_NAME
           $$installerName = "YR_TO_RA2_Installer_$$tag.exe"
