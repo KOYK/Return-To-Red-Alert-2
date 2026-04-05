@@ -88,7 +88,7 @@ jobs:
             'AppName=YR_TO_RA2 Mod',
             "AppVersion=$version",
             'AppPublisher=YR TO RA2 Mod Authors',
-            'DefaultDirName=C:\Games\Command and Conquer\Command and Conquer Red Alert II',
+            'DefaultDirName={drive:C}\Games\Command and Conquer\Command and Conquer Red Alert II',
             'DefaultGroupName=Command and Conquer\YR TO RA2 Mod',
             'OutputDir=dist',
             "OutputBaseFilename=$installerName",
@@ -109,12 +109,6 @@ jobs:
             '[Icons]',
             "Name: '{group}\Run Mod'; Filename: '{app}\RunAres.bat'"
           )
-          
-          $issContent = $issLines -join "`n"
-          Set-Content -Path 'installer.iss' -Value $issContent -Encoding UTF8
-          Write-Host "✓ Installer script created: $installerName"
-          Get-Content 'installer.iss'
-        shell: pwsh
 
       - name: Install Inno Setup
         run: choco install innosetup -y
