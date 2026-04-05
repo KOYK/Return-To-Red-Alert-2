@@ -16,10 +16,8 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      # --- STEP 1: SET VERSION (Bash - The OpenRA Way) ---
-      - name: Set Version
+      - name: Set Version (Bash)
         run: |
-          # Extract tag name (e.g., v1.0.3-test) and set as env var
           echo "TAG_NAME=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
           echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_ENV
         shell: bash
@@ -52,7 +50,6 @@ jobs:
 
       - name: Create Version Marker
         run: |
-          # Read from environment variable set by Bash step
           Set-Content -Path 'YR_TO_RA2_VERSION.txt' -Value $env:TAG_NAME -Encoding UTF8
           Write-Host "✓ Version marker created: $env:TAG_NAME"
         shell: pwsh
@@ -70,8 +67,11 @@ jobs:
             Copy-Item $_.FullName -Destination $tempFolder -Recurse -Force
           }
 
-          # Read from environment variable
-          $$zipName = "YR_TO_RA2_Package_$$env:TAG_NAME.zip"
+          # USE CONCATENATION, NOT INTERPOLATION
+          $prefix = 'YR_TO_RA2_Package_'
+          $suffix = '.zip'
+          $zipName = $prefix + $env:TAG_NAME + $suffix
+          
           Compress-Archive -Path "$tempFolder\*" -DestinationPath $zipName -CompressionLevel Optimal -Force
           
           Write-Host "✓ ZIP created: $zipName"
@@ -80,11 +80,10 @@ jobs:
 
       - name: Create Installer Script
         run: |
-          # Read from environment variable
           $tag = $env:TAG_NAME
           $version = $env:VERSION
-          $$installerName = "YR_TO_RA2_Installer_$$tag"
-          
+          $installerName = 'YR_TO_RA2_Installer_' + $tag
+
           $issLines = @(
             '[Setup]',
             'AppName=YR_TO_RA2 Mod',
@@ -138,11 +137,11 @@ jobs:
       - name: Build Installer
         run: |
           $tag = $env:TAG_NAME
-          $$installerName = "YR_TO_RA2_Installer_$$tag.exe"
+          $installerName = 'YR_TO_RA2_Installer_' + $tag + '.exe'
           
           iscc.exe installer.iss
           
-          $$expectedFile = "dist\$$installerName"
+          $expectedFile = 'dist\' + $installerName
           if (-not (Test-Path $expectedFile)) { 
             throw "Installer build failed. Expected: $expectedFile" 
           }
