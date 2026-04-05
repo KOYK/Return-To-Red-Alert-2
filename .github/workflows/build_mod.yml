@@ -95,7 +95,6 @@ jobs:
             'Compression=lzma2',
             'SolidCompression=yes',
             'WizardStyle=modern',
-            'SignTool=signtool',
             '',
             '[Files]',
             'Source: expandmd24.mix; DestDir: {app}; Flags: ignoreversion',
