@@ -30,7 +30,6 @@ jobs:
           EVENT_TYPE: ${{ github.event_name }}
         run: |
           $tag = ""
-          
           if ($env:EVENT_TYPE -eq "workflow_dispatch") {
             if ($env:MANUAL_INPUT -and $env:MANUAL_INPUT -ne "") {
               $tag = $env:MANUAL_INPUT
@@ -40,12 +39,9 @@ jobs:
           } else {
             $tag = $env:TAG_NAME
           }
-          
           $version = $tag -replace '^v', ''
-          
           echo "VERSION=$version" >> $env:GITHUB_OUTPUT
           echo "TAG=$tag" >> $env:GITHUB_OUTPUT
-          
           Write-Host "Detected Tag: $tag"
           Write-Host "Detected Version: $version"
         shell: pwsh
@@ -82,7 +78,8 @@ jobs:
           Write-Host "✓ Version marker created"
         shell: pwsh
 
-      - name: Create Portable ZIP
+      # --- YOUR ORIGINAL WORKING ZIP CODE (Restored) ---
+      - name: Create ZIP Archive
         run: |
           $tempFolder = "dist_temp"
           if (Test-Path $tempFolder) { Remove-Item -Recurse -Force $tempFolder }
@@ -95,15 +92,19 @@ jobs:
             Copy-Item $_.FullName -Destination $tempFolder -Recurse -Force
           }
 
-          Compress-Archive -Path "$$tempFolder\*" -DestinationPath "YR_TO_RA2_$${{ steps.version.outputs.VERSION }}.zip" -CompressionLevel Optimal -Force
-          Write-Host "✓ Portable ZIP created"
+          # Static filename (or change to "YR_TO_RA2_Package.zip" if you prefer)
+          Compress-Archive -Path "$tempFolder\*" -DestinationPath "YR_TO_RA2_Package.zip" -CompressionLevel Optimal -Force
+          
+          Write-Host "✓ ZIP archive created"
           Remove-Item -Recurse -Force $tempFolder
         shell: pwsh
+      # -------------------------------------------------
 
       - name: Create Installer Script
         run: |
           $$version = "$${{ steps.version.outputs.VERSION }}"
           $$tag = "$${{ steps.version.outputs.TAG }}"
+          $$installerName = "YR_TO_RA2_$${version}_Installer"
           
           $issLines = @(
             "[Setup]",
@@ -113,7 +114,7 @@ jobs:
             "DefaultDirName={autopf}\Westwood\Red Alert 2",
             "DefaultGroupName=YR_TO_RA2 Mod",
             "OutputDir=dist",
-            "OutputBaseFilename=YR_TO_RA2_${version}_Installer",
+            "OutputBaseFilename=$installerName",
             "Compression=lzma2",
             "SolidCompression=yes",
             "WizardStyle=modern",
@@ -157,11 +158,14 @@ jobs:
 
       - name: Build Installer
         run: |
+          $$version = "$${{ steps.version.outputs.VERSION }}"
           iscc.exe installer.iss
-          if (-not (Test-Path "dist\YR_TO_RA2_${{ steps.version.outputs.VERSION }}_Installer.exe")) { 
-            throw "Installer build failed" 
+          
+          $$expectedFile = "dist\YR_TO_RA2_$${version}_Installer.exe"
+          if (-not (Test-Path $expectedFile)) { 
+            throw "Installer build failed. Expected: $expectedFile" 
           }
-          Move-Item "dist\YR_TO_RA2_${{ steps.version.outputs.VERSION }}_Installer.exe" "." -Force
+          Move-Item $expectedFile "." -Force
           Write-Host "✓ Installer created"
         shell: pwsh
 
@@ -169,7 +173,7 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            YR_TO_RA2_${{ steps.version.outputs.VERSION }}.zip
+            YR_TO_RA2_Package.zip
             YR_TO_RA2_${{ steps.version.outputs.VERSION }}_Installer.exe
           tag_name: ${{ github.ref_name }}
           name: YR_TO_RA2 ${{ steps.version.outputs.TAG }}
@@ -177,12 +181,7 @@ jobs:
             ## YR_TO_RA2 Mod - ${{ steps.version.outputs.TAG }}
             
             **Downloads:**
-            - [Portable ZIP](#) - For manual installation
-            - [Installer EXE](#) - For automatic installation (removes old version)
-            
-            **Installation:**
-            1. Run the installer OR extract the ZIP
-            2. Place files in your Red Alert 2/Yuri's Revenge folder
-            3. Run `RunAres.bat` to launch
+            - [Portable ZIP](#) - Static package
+            - [Installer EXE](#) - Versioned installer (removes old version)
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
