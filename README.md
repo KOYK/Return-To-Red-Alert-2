@@ -12,3 +12,14 @@ In addition the mod uses [Ares](https://ares-developers.github.io/Ares-docs/) 3.
 <img width="64" height="64" alt="ares_logos" src="https://github.com/user-attachments/assets/baec5a74-22fa-492c-aeaf-9677b3d204cb" />
 
 <img width="198" height="198" alt="phobos_logo" src="https://github.com/user-attachments/assets/b0b58897-b803-4e65-92be-8a7de7b0b9f9" />
+
+========================
+
+Notable Changes:
+
+- Harvesters, MCVs, and Engineers can no longer be selected along with combat units, preventing them from being accidentally sent into battle.
+- SEALs replace multiple Tanyas in skirmish games; you can still build one Tanya.
+- Tech buildings now remain alive after their owner is defeated.
+- Attack-move has been enhanced, allowing units to stop and engage enemies automatically.
+- AI has been improved and now builds larger bases.
+- Secret Lab now also offers units from Yuri’s Revenge (e.g., Battle Fortress) and will update its available tech when re-captured.
