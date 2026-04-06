@@ -109,8 +109,8 @@ jobs:
           Source: Source\RA2.ico; DestDir: {app}; Flags: ignoreversion
 
           [Icons]
-          Name: {group}\YR to RA2 Mod; Filename: {app}\Syringe.exe; Parameters: {app}\gamemd.exe %COMMAND%; IconFilename: {app}\RA2.ico
-          Name: {userdesktop}\YR to RA2 Mod; Filename: {app}\Syringe.exe; Parameters: {app}\gamemd.exe %COMMAND%; IconFilename: {app}\RA2.ico; Tasks: desktopshortcut
+          Name: {group}\YR to RA2 Mod; Filename: {app}\Syringe.exe; Parameters: "gamemd.exe" %COMMAND%; IconFilename: {app}\RA2.ico
+          Name: {userdesktop}\YR to RA2 Mod; Filename: {app}\Syringe.exe; Parameters: "gamemd.exe" %COMMAND%; IconFilename: {app}\RA2.ico; Tasks: desktopshortcut
 
           [Tasks]
           Name: desktopshortcut; Description: "Create a &desktop shortcut"; GroupDescription: "Additional Options:"; Flags: unchecked
