@@ -83,39 +83,40 @@ jobs:
           $version = $env:VERSION
           $installerName = 'YR_TO_RA2_Installer_' + $tag
 
-          # Create the file using Add-Content to avoid quote issues
-          Set-Content -Path 'installer.iss' -Value "" -Encoding UTF8
-          
-          Add-Content -Path 'installer.iss' -Value "[Setup]" -Encoding UTF8
-          Add-Content -Path 'installer.iss' -Value "AppName=YR_TO_RA2 Mod" -Encoding UTF8
-          Add-Content -Path 'installer.iss' -Value "AppVersion=$version" -Encoding UTF8
-          Add-Content -Path 'installer.iss' -Value "AppPublisher=YR TO RA2 Mod Authors" -Encoding UTF8
-          Add-Content -Path 'installer.iss' -Value "DefaultDirName=C:\Games\Command and Conquer\Command and Conquer Red Alert II" -Encoding UTF8
-          Add-Content -Path 'installer.iss' -Value "DefaultGroupName=Command and Conquer\YR TO RA2 Mod" -Encoding UTF8
-          Add-Content -Path 'installer.iss' -Value "OutputDir=dist" -Encoding UTF8
-          Add-Content -Path 'installer.iss' -Value "OutputBaseFilename=$installerName" -Encoding UTF8
-          Add-Content -Path 'installer.iss' -Value "Compression=lzma2" -Encoding UTF8
-          Add-Content -Path 'installer.iss' -Value "SolidCompression=yes" -Encoding UTF8
-          Add-Content -Path 'installer.iss' -Value "WizardStyle=modern" -Encoding UTF8
-          Add-Content -Path 'installer.iss' -Value "CreateAppDir=yes" -Encoding UTF8
-          Add-Content -Path 'installer.iss' -Value "" -Encoding UTF8
-          Add-Content -Path 'installer.iss' -Value "[Files]" -Encoding UTF8
-          Add-Content -Path 'installer.iss' -Value "Source: expandmd24.mix; DestDir: {app}; Flags: ignoreversion" -Encoding UTF8
-          Add-Content -Path 'installer.iss' -Value "Source: YR_TO_RA2_VERSION.txt; DestDir: {app}; Flags: ignoreversion" -Encoding UTF8
-          Add-Content -Path 'installer.iss' -Value "Source: Source\*.bat; DestDir: {app}; Flags: ignoreversion" -Encoding UTF8
-          Add-Content -Path 'installer.iss' -Value "Source: Source\*.dll; DestDir: {app}; Flags: ignoreversion" -Encoding UTF8
-          Add-Content -Path 'installer.iss' -Value "Source: Source\*.exe; DestDir: {app}; Flags: ignoreversion" -Encoding UTF8
-          Add-Content -Path 'installer.iss' -Value "Source: Source\*.inj; DestDir: {app}; Flags: ignoreversion" -Encoding UTF8
-          Add-Content -Path 'installer.iss' -Value "Source: Source\*.mix; DestDir: {app}; Flags: ignoreversion" -Encoding UTF8
-          Add-Content -Path 'installer.iss' -Value "Source: Source\*.txt; DestDir: {app}; Flags: ignoreversion" -Encoding UTF8
-          Add-Content -Path 'installer.iss' -Value "Source: Source\RA2.ico; DestDir: {app}; Flags: ignoreversion" -Encoding UTF8
-          Add-Content -Path 'installer.iss' -Value "" -Encoding UTF8
-          Add-Content -Path 'installer.iss' -Value "[Icons]" -Encoding UTF8
-          Add-Content -Path 'installer.iss' -Value 'Name: {group}\YR to RA2 Mod; Filename: {app}\Syringe.exe; Parameters: "gamemd.exe" %COMMAND%; IconFilename: {app}\RA2.ico' -Encoding UTF8
-          Add-Content -Path 'installer.iss' -Value 'Name: {userdesktop}\YR to RA2 Mod; Filename: {app}\Syringe.exe; Parameters: "gamemd.exe" %COMMAND%; IconFilename: {app}\RA2.ico; Tasks: desktopshortcut' -Encoding UTF8
-          Add-Content -Path 'installer.iss' -Value "" -Encoding UTF8
-          Add-Content -Path 'installer.iss' -Value "[Tasks]" -Encoding UTF8
-          Add-Content -Path 'installer.iss' -Value 'Name: desktopshortcut; Description: "Create a &desktop shortcut"; GroupDescription: "Additional Options:"; Flags: unchecked' -Encoding UTF8
+          $lines = @(
+            "[Setup]",
+            "AppName=YR_TO_RA2 Mod",
+            "AppVersion=$version",
+            "AppPublisher=YR TO RA2 Mod Authors",
+            "DefaultDirName=C:\Games\Command and Conquer\Command and Conquer Red Alert II",
+            "DefaultGroupName=Command and Conquer\YR TO RA2 Mod",
+            "OutputDir=dist",
+            "OutputBaseFilename=$installerName",
+            "Compression=lzma2",
+            "SolidCompression=yes",
+            "WizardStyle=modern",
+            "CreateAppDir=yes",
+            "",
+            "[Files]",
+            "Source: expandmd24.mix; DestDir: {app}; Flags: ignoreversion",
+            "Source: YR_TO_RA2_VERSION.txt; DestDir: {app}; Flags: ignoreversion",
+            "Source: Source\*.bat; DestDir: {app}; Flags: ignoreversion",
+            "Source: Source\*.dll; DestDir: {app}; Flags: ignoreversion",
+            "Source: Source\*.exe; DestDir: {app}; Flags: ignoreversion",
+            "Source: Source\*.inj; DestDir: {app}; Flags: ignoreversion",
+            "Source: Source\*.mix; DestDir: {app}; Flags: ignoreversion",
+            "Source: Source\*.txt; DestDir: {app}; Flags: ignoreversion",
+            "Source: Source\RA2.ico; DestDir: {app}; Flags: ignoreversion",
+            "",
+            "[Icons]",
+            'Name: {group}\YR to RA2 Mod; Filename: {app}\Syringe.exe; Parameters: """gamemd.exe"" %COMMAND%"; IconFilename: {app}\RA2.ico',
+            'Name: {userdesktop}\YR to RA2 Mod; Filename: {app}\Syringe.exe; Parameters: """gamemd.exe"" %COMMAND%"; IconFilename: {app}\RA2.ico; Tasks: desktopshortcut',
+            "",
+            "[Tasks]",
+            'Name: desktopshortcut; Description: "Create a &desktop shortcut"; GroupDescription: "Additional Options:"; Flags: unchecked'
+          )
+
+          $lines -join "`n" | Set-Content -Path 'installer.iss' -Encoding UTF8
           
           Write-Host "✓ Installer script created: $installerName"
           Get-Content 'installer.iss'
