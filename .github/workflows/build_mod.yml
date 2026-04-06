@@ -78,48 +78,44 @@ jobs:
         shell: pwsh
 
       - name: Create Installer Script
-			run: |
-			  $tag = $env:TAG_NAME
-			  $version = $env:VERSION
-			  $installerName = 'YR_TO_RA2_Installer_' + $tag
+        run: |
+          $tag = $env:TAG_NAME
+          $version = $env:VERSION
+          $installerName = 'YR_TO_RA2_Installer_' + $tag
 
-			  @"
-			[Setup]
-			AppName=YR_TO_RA2 Mod
-			AppVersion=$version
-			AppPublisher=YR TO RA2 Mod Authors
-			DefaultDirName=C:\Games\Command and Conquer\Command and Conquer Red Alert II
-			DefaultGroupName=Command and Conquer\YR TO RA2 Mod
-			OutputDir=dist
-			OutputBaseFilename=$installerName
-			Compression=lzma2
-			SolidCompression=yes
-			WizardStyle=modern
-			DisableDirPage=no
-			DisableProgramGroupPage=no
+          @"
+          [Setup]
+          AppName=YR_TO_RA2 Mod
+          AppVersion=$version
+          AppPublisher=YR TO RA2 Mod Authors
+          DefaultDirName=C:\Games\Command and Conquer\Command and Conquer Red Alert II
+          DefaultGroupName=Command and Conquer\YR TO RA2 Mod
+          OutputDir=dist
+          OutputBaseFilename=$installerName
+          Compression=lzma2
+          SolidCompression=yes
+          WizardStyle=modern
+          DisableDirPage=no
+          DisableProgramGroupPage=no
 
-			[Files]
-			Source: expandmd24.mix; DestDir: {app}; Flags: ignoreversion
-			Source: YR_TO_RA2_VERSION.txt; DestDir: {app}; Flags: ignoreversion
-			Source: Source\*.bat; DestDir: {app}; Flags: ignoreversion
-			Source: Source\*.dll; DestDir: {app}; Flags: ignoreversion
-			Source: Source\*.exe; DestDir: {app}; Flags: ignoreversion
-			Source: Source\*.inj; DestDir: {app}; Flags: ignoreversion
-			Source: Source\*.mix; DestDir: {app}; Flags: ignoreversion
-			Source: Source\*.txt; DestDir: {app}; Flags: ignoreversion
-			; Copy the Icon file so the shortcut can use it
-			Source: Source\RA2.ico; DestDir: {app}; Flags: ignoreversion
-			; Copy Syringe.exe
-			Source: Source\Syringe.exe; DestDir: {app}; Flags: ignoreversion; Check: FileExists('Source\Syringe.exe')
+          [Files]
+          Source: expandmd24.mix; DestDir: {app}; Flags: ignoreversion
+          Source: YR_TO_RA2_VERSION.txt; DestDir: {app}; Flags: ignoreversion
+          Source: Source\*.bat; DestDir: {app}; Flags: ignoreversion
+          Source: Source\*.dll; DestDir: {app}; Flags: ignoreversion
+          Source: Source\*.exe; DestDir: {app}; Flags: ignoreversion
+          Source: Source\*.inj; DestDir: {app}; Flags: ignoreversion
+          Source: Source\*.mix; DestDir: {app}; Flags: ignoreversion
+          Source: Source\*.txt; DestDir: {app}; Flags: ignoreversion
+          Source: Source\RA2.ico; DestDir: {app}; Flags: ignoreversion
+          Source: Source\Syringe.exe; DestDir: {app}; Flags: ignoreversion; Check: FileExists('Source\Syringe.exe')
 
-			[Icons]
-			; Shortcut with Custom Icon and Parameters
-			Name: {group}\Run Mod; Filename: {app}\Syringe.exe; Parameters: '"{app}\gamemd.exe" %COMMAND%'; IconFilename: '{app}\RA2.ico'
+          [Icons]
+          Name: {group}\Run Mod; Filename: {app}\Syringe.exe; Parameters: '"{app}\gamemd.exe" %COMMAND%'; IconFilename: '{app}\RA2.ico'
 
-		[Run]
-		; Optional: Run the mod after install
-		Filename: "{app}\Syringe.exe"; Parameters: '"{app}\gamemd.exe"'; Description: "Launch YR to RA2 Mod now"; Flags: nowait postinstall skipifsilent
-		"@ | Set-Content -Path 'installer.iss' -Encoding UTF8
+          [Run]
+          Filename: "{app}\Syringe.exe"; Parameters: '"{app}\gamemd.exe"'; Description: "Launch YR to RA2 Mod now"; Flags: nowait postinstall skipifsilent
+          "@ | Set-Content -Path 'installer.iss' -Encoding UTF8
           
           Write-Host "✓ Installer script created: $installerName"
           Get-Content 'installer.iss'
