@@ -95,8 +95,7 @@ jobs:
           Compression=lzma2
           SolidCompression=yes
           WizardStyle=modern
-          DisableDirPage=no
-          DisableProgramGroupPage=no
+          CreateAppDir=yes
 
           [Files]
           Source: expandmd24.mix; DestDir: {app}; Flags: ignoreversion
@@ -108,13 +107,13 @@ jobs:
           Source: Source\*.mix; DestDir: {app}; Flags: ignoreversion
           Source: Source\*.txt; DestDir: {app}; Flags: ignoreversion
           Source: Source\RA2.ico; DestDir: {app}; Flags: ignoreversion
-          Source: Source\Syringe.exe; DestDir: {app}; Flags: ignoreversion; Check: FileExists('Source\Syringe.exe')
 
           [Icons]
-          Name: {group}\Run Mod; Filename: {app}\Syringe.exe; Parameters: '"{app}\gamemd.exe" %COMMAND%'; IconFilename: '{app}\RA2.ico'
+          Name: {group}\YR to RA2 Mod; Filename: {app}\Syringe.exe; Parameters: "{app}\gamemd.exe" "%COMMAND%"; IconFilename: {app}\RA2.ico
+          Name: {userdesktop}\YR to RA2 Mod; Filename: {app}\Syringe.exe; Parameters: "{app}\gamemd.exe" "%COMMAND%"; IconFilename: {app}\RA2.ico; Tasks: desktopshortcut
 
-          [Run]
-          Filename: "{app}\Syringe.exe"; Parameters: '"{app}\gamemd.exe"'; Description: "Launch YR to RA2 Mod now"; Flags: nowait postinstall skipifsilent
+          [Tasks]
+          Name: desktopshortcut; Description: "Create a &desktop shortcut"; GroupDescription: "Additional Options:"; Flags: unchecked
           "@ | Set-Content -Path 'installer.iss' -Encoding UTF8
           
           Write-Host "✓ Installer script created: $installerName"
