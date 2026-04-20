@@ -1,21 +1,16 @@
 NOTE: EA has not endorsed and does not support this product.
 
 # YR-To-RA2
-A Red Alert 2 Yuri's Revenge mod aiming to convert RA2YR into RA2 while keeping the benefits that come with Yuri's revenge, like new unit response voices and so on.
+A Red Alert 2 Yuri's Revenge mod aiming to __convert RA2YR into RA2__ while keeping the benefits that come with Yuri's revenge, like new unit response voices and so on.
 Including the original music and menus.
 
-I plan to add both the Allied and Soviet campaigns from Red Alert 2 and connect them with the Yuri’s Revenge campaigns.
+Adding both the Allied and Soviet campaigns from Red Alert 2 are planned.
 
-In addition the mod uses [Ares](https://ares-developers.github.io/Ares-docs/) 3.0 and [Phobos](https://phobos.readthedocs.io/en/latest/index.html#)
+## In addition, the mod uses [Ares](https://ares-developers.github.io/Ares-docs/) 3.0 And [Phobos](https://phobos.readthedocs.io/en/latest/index.html#)
 
+<img width="233" height="64" alt="ap" src="https://github.com/user-attachments/assets/76dbc657-48d9-4e8d-aef9-a57fddad35d3" />
 
-<img width="64" height="64" alt="ares_logos" src="https://github.com/user-attachments/assets/baec5a74-22fa-492c-aeaf-9677b3d204cb" />
-
-<img width="198" height="198" alt="phobos_logo" src="https://github.com/user-attachments/assets/b0b58897-b803-4e65-92be-8a7de7b0b9f9" />
-
-========================
-
-Notable Changes:
+## Notable Changes:
 
 - Harvesters, MCVs, and Engineers can no longer be selected along with combat units, preventing them from being accidentally sent into battle.
 - SEALs replace multiple Tanyas in skirmish games; you can still build one Tanya.
