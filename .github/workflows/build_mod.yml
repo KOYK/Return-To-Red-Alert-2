@@ -1,4 +1,4 @@
-name: Build YR_TO_RA2 Release
+name: Build Return To Red Alert 2 Release
 
 on:
   push:
@@ -50,7 +50,7 @@ jobs:
 
       - name: Create Version Marker
         run: |
-          Set-Content -Path 'YR_TO_RA2_VERSION.txt' -Value $env:TAG_NAME -Encoding UTF8
+          Set-Content -Path 'Return_To_Red_Alert_2_V.txt' -Value $env:TAG_NAME -Encoding UTF8
           Write-Host "✓ Version marker created: $env:TAG_NAME"
         shell: pwsh
 
@@ -61,7 +61,7 @@ jobs:
           New-Item -ItemType Directory -Force -Path $tempFolder | Out-Null
 
           Copy-Item 'expandmd24.mix' -Destination $tempFolder
-          Copy-Item 'YR_TO_RA2_VERSION.txt' -Destination $tempFolder
+          Copy-Item 'Return_To_Red_Alert_2_V.txt' -Destination $tempFolder
 
           Get-ChildItem -Path 'Source' -Exclude 'expandmd24' | ForEach-Object {
             Copy-Item $_.FullName -Destination $tempFolder -Recurse -Force
@@ -85,9 +85,9 @@ jobs:
 
           $lines = @(
             "[Setup]",
-            "AppName=YR_TO_RA2 Mod",
+            "AppName=Return To Red Alert 2 Mod",
             "AppVersion=$version",
-            "AppPublisher=YR TO RA2 Mod Authors",
+            "AppPublisher=Return To Red Alert 2 Mod Authors",
             "DefaultDirName=C:\Games\Command and Conquer\Command and Conquer Red Alert II",
             "DefaultGroupName=Command and Conquer\YR TO RA2 Mod",
             "OutputDir=dist",
@@ -99,7 +99,7 @@ jobs:
             "",
             "[Files]",
             "Source: expandmd24.mix; DestDir: {app}; Flags: ignoreversion",
-            "Source: YR_TO_RA2_VERSION.txt; DestDir: {app}; Flags: ignoreversion",
+            "Source: Return_To_Red_Alert_2_V.txt; DestDir: {app}; Flags: ignoreversion",
             "Source: Source\*.bat; DestDir: {app}; Flags: ignoreversion",
             "Source: Source\*.dll; DestDir: {app}; Flags: ignoreversion",
             "Source: Source\*.exe; DestDir: {app}; Flags: ignoreversion",
@@ -148,9 +148,9 @@ jobs:
             YR_TO_RA2_Package_${{ github.ref_name }}.zip
             YR_TO_RA2_Installer_${{ github.ref_name }}.exe
           tag_name: ${{ github.ref_name }}
-          name: YR_TO_RA2 ${{ github.ref_name }}
+          name: Return To Red Alert 2 ${{ github.ref_name }}
           body: |
-            ## YR_TO_RA2 Mod - ${{ github.ref_name }}
+            ## Return To Red Alert 2 Mod - ${{ github.ref_name }}
             Download the mod using either the portable ZIP or installer EXE below.
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
