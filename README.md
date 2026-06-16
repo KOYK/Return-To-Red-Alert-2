@@ -1,6 +1,6 @@
 NOTE: EA has not endorsed and does not support this product.
 
-# YR-To-RA2
+# Return To Red Alert 2
 A Red Alert 2 Yuri's Revenge mod aiming to __convert RA2YR into RA2__ while keeping the benefits that come with Yuri's revenge, like new unit response voices and so on.
 Including the original music and menus.
 
