@@ -67,7 +67,7 @@ jobs:
             Copy-Item $_.FullName -Destination $tempFolder -Recurse -Force
           }
 
-          $prefix = 'YR_TO_RA2_Package_'
+          $prefix = 'Return To Red Alert 2 Portable '
           $suffix = '.zip'
           $zipName = $prefix + $env:TAG_NAME + $suffix
           
@@ -81,7 +81,7 @@ jobs:
         run: |
           $tag = $env:TAG_NAME
           $version = $env:VERSION
-          $installerName = 'YR_TO_RA2_Installer_' + $tag
+          $installerName = 'Return To Red Alert 2 Installer ' + $tag
 
           $lines = @(
             "[Setup]",
@@ -129,7 +129,7 @@ jobs:
       - name: Build Installer
         run: |
           $tag = $env:TAG_NAME
-          $installerName = 'YR_TO_RA2_Installer_' + $tag + '.exe'
+          $installerName = 'Return To Red Alert 2 Installer ' + $tag + '.exe'
           
           iscc.exe installer.iss
           
@@ -145,8 +145,8 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            YR_TO_RA2_Package_${{ github.ref_name }}.zip
-            YR_TO_RA2_Installer_${{ github.ref_name }}.exe
+            Return To Red Alert 2 Portable ${{ github.ref_name }}.zip
+            Return To Red Alert 2 Installer ${{ github.ref_name }}.exe
           tag_name: ${{ github.ref_name }}
           name: Return To Red Alert 2 ${{ github.ref_name }}
           body: |
